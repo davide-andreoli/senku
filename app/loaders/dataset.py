@@ -1,12 +1,11 @@
 import torch
 import os
-import numpy as np
 from torch.utils.data import Dataset, DataLoader, Subset
 from tokenizer.tokenizer import Tokenizer
-from typing import List
 import hashlib
 import csv
 from torch.nn.utils.rnn import pad_sequence
+
 
 class TextDataset(Dataset):
     def __init__(self, text: str, tokenizer: Tokenizer, max_length: int, stride: int):
@@ -16,8 +15,8 @@ class TextDataset(Dataset):
         print(f"Number of token ids: {len(token_ids)}")
         print(f"Max length: {max_length}")
         for i in range(0, len(token_ids) - max_length, stride):
-            input_chunk = token_ids[i:i + max_length]
-            target_chunk = token_ids[i + 1: i + max_length + 1]
+            input_chunk = token_ids[i : i + max_length]
+            target_chunk = token_ids[i + 1 : i + max_length + 1]
             self.input_ids.append(torch.tensor(input_chunk))
             self.target_ids.append(torch.tensor(target_chunk))
 
@@ -26,26 +25,64 @@ class TextDataset(Dataset):
 
     def __getitem__(self, index: int):
         return self.input_ids[index], self.target_ids[index]
-    
-    def get_loader(self, batch_size: int, shuffle: bool = True, drop_last: bool =True, num_workers: int = 0):
-        return DataLoader(self, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, num_workers=num_workers)
-    
-    def get_train_validation_loader(self, batch_size: int, shuffle: bool = True, drop_last: bool =True, num_workers: int = 0, train_validation_ratio: float = 0.9):
 
+    def get_loader(
+        self,
+        batch_size: int,
+        shuffle: bool = True,
+        drop_last: bool = True,
+        num_workers: int = 0,
+    ):
+        return DataLoader(
+            self,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            drop_last=drop_last,
+            num_workers=num_workers,
+        )
+
+    def get_train_validation_loader(
+        self,
+        batch_size: int,
+        shuffle: bool = True,
+        drop_last: bool = True,
+        num_workers: int = 0,
+        train_validation_ratio: float = 0.9,
+    ):
         split_index = int(train_validation_ratio * len(self))
         train_indices = list(range(0, split_index))
         val_indices = list(range(split_index, len(self)))
 
         train_dataset = Subset(self, train_indices)
         validation_dataset = Subset(self, val_indices)
-        
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, num_workers=num_workers)
-        validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, num_workers=num_workers)
-        
+
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            drop_last=drop_last,
+            num_workers=num_workers,
+        )
+        validation_loader = DataLoader(
+            validation_dataset,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            drop_last=drop_last,
+            num_workers=num_workers,
+        )
+
         return train_loader, validation_loader
-    
+
+
 class TextFolderDataset(Dataset):
-    def __init__(self, folder_path: str, tokenizer: Tokenizer, max_length: int, stride: int, cache_dir: str = None):
+    def __init__(
+        self,
+        folder_path: str,
+        tokenizer: Tokenizer,
+        max_length: int,
+        stride: int,
+        cache_dir: str = None,
+    ):
         self.folder_path = folder_path
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -62,7 +99,7 @@ class TextFolderDataset(Dataset):
     def _token_cache_path(self, file_path):
         fname_hash = hashlib.md5(file_path.encode("utf-8")).hexdigest()
         return os.path.join(self.cache_dir, f"{fname_hash}.pt")
-    
+
     def _tokenize_and_cache(self, file_path):
         cache_path = self._token_cache_path(file_path)
         if os.path.exists(cache_path):
@@ -98,23 +135,55 @@ class TextFolderDataset(Dataset):
         target_ids = tokens[start + 1 : start + self.max_length + 1]
 
         return input_ids, target_ids
-    
-    def get_loader(self, batch_size: int, shuffle: bool = True, drop_last: bool =True, num_workers: int = 0):
-        return DataLoader(self, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, num_workers=num_workers)
-    
-    def get_train_validation_loader(self, batch_size: int, shuffle: bool = True, drop_last: bool =True, num_workers: int = 0, train_validation_ratio: float = 0.9):
+
+    def get_loader(
+        self,
+        batch_size: int,
+        shuffle: bool = True,
+        drop_last: bool = True,
+        num_workers: int = 0,
+    ):
+        return DataLoader(
+            self,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            drop_last=drop_last,
+            num_workers=num_workers,
+        )
+
+    def get_train_validation_loader(
+        self,
+        batch_size: int,
+        shuffle: bool = True,
+        drop_last: bool = True,
+        num_workers: int = 0,
+        train_validation_ratio: float = 0.9,
+    ):
         split_index = int(train_validation_ratio * len(self))
         train_indices = list(range(0, split_index))
         val_indices = list(range(split_index, len(self)))
 
         train_dataset = Subset(self, train_indices)
         validation_dataset = Subset(self, val_indices)
-        
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, num_workers=num_workers)
-        validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, num_workers=num_workers)
-        
+
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            drop_last=drop_last,
+            num_workers=num_workers,
+        )
+        validation_loader = DataLoader(
+            validation_dataset,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            drop_last=drop_last,
+            num_workers=num_workers,
+        )
+
         return train_loader, validation_loader
-    
+
+
 class CSVListDataset(Dataset):
     def __init__(self, file_path: str, tokenizer: Tokenizer, context_length: int):
         self.file_path = file_path
@@ -135,7 +204,7 @@ class CSVListDataset(Dataset):
     def haiku_collate_fn(self, batch):
         """
         batch: list of tuples (input_ids, target_ids), each a 1D tensor
-        
+
         Returns:
             input_ids_padded: (batch_size, max_len) tensor
             target_ids_padded: (batch_size, max_len) tensor
@@ -143,9 +212,13 @@ class CSVListDataset(Dataset):
         """
         input_ids, target_ids = zip(*batch)
 
-        input_ids_padded = pad_sequence(input_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id)
-        target_ids_padded = pad_sequence(target_ids, batch_first=True, padding_value=-100)  # -100 ignored by CrossEntropyLoss
-        
+        input_ids_padded = pad_sequence(
+            input_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
+        )
+        target_ids_padded = pad_sequence(
+            target_ids, batch_first=True, padding_value=-100
+        )  # -100 ignored by CrossEntropyLoss
+
         attention_mask = (input_ids_padded != self.tokenizer.pad_token_id).long()
 
         return (input_ids_padded, target_ids_padded, attention_mask)
@@ -159,19 +232,53 @@ class CSVListDataset(Dataset):
             token_ids[:-1],
             token_ids[1:],
         )
-            
-    def get_loader(self, batch_size: int, shuffle: bool = True, drop_last: bool =True, num_workers: int = 0):
-        return DataLoader(self, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, num_workers=num_workers, collate_fn=self.haiku_collate_fn)
-    
-    def get_train_validation_loader(self, batch_size: int, shuffle: bool = True, drop_last: bool =True, num_workers: int = 0, train_validation_ratio: float = 0.9):
+
+    def get_loader(
+        self,
+        batch_size: int,
+        shuffle: bool = True,
+        drop_last: bool = True,
+        num_workers: int = 0,
+    ):
+        return DataLoader(
+            self,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            drop_last=drop_last,
+            num_workers=num_workers,
+            collate_fn=self.haiku_collate_fn,
+        )
+
+    def get_train_validation_loader(
+        self,
+        batch_size: int,
+        shuffle: bool = True,
+        drop_last: bool = True,
+        num_workers: int = 0,
+        train_validation_ratio: float = 0.9,
+    ):
         split_index = int(train_validation_ratio * len(self))
         train_indices = list(range(0, split_index))
         val_indices = list(range(split_index, len(self)))
 
         train_dataset = Subset(self, train_indices)
         validation_dataset = Subset(self, val_indices)
-        
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, num_workers=num_workers, collate_fn=self.haiku_collate_fn)
-        validation_loader = DataLoader(validation_dataset, batch_size=batch_size, shuffle=shuffle, drop_last=drop_last, num_workers=num_workers, collate_fn=self.haiku_collate_fn)
-        
+
+        train_loader = DataLoader(
+            train_dataset,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            drop_last=drop_last,
+            num_workers=num_workers,
+            collate_fn=self.haiku_collate_fn,
+        )
+        validation_loader = DataLoader(
+            validation_dataset,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            drop_last=drop_last,
+            num_workers=num_workers,
+            collate_fn=self.haiku_collate_fn,
+        )
+
         return train_loader, validation_loader
