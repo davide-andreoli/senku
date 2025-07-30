@@ -23,7 +23,7 @@ class Trainer:
         device: torch.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu"
         ),
-        checkpoint_path: str = "checkpoints/checkpoint.pt",
+        checkpoint_dir: str = "checkpoints/checkpoint.pt",
         epoch: int = 0,
         reset_checkpoint: bool = False,
     ):
@@ -33,7 +33,8 @@ class Trainer:
         self.device = device
         self.optimizer = optimizer
         self.loss = loss
-        self.checkpoint_path = checkpoint_path
+        self.checkpoint_dir = checkpoint_dir
+        self.checkpoint_path = os.path.join(checkpoint_dir, model.checkpoint_name)
         self.epoch = epoch
 
         if not reset_checkpoint and os.path.exists(self.checkpoint_path):

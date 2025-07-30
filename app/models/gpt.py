@@ -17,6 +17,12 @@ class GPTModel(nn.Module):
     ):
         super().__init__()
         self.context_length = context_length
+        self.vocabulary_size = vocabulary_size
+        self.embedding_dimension = embedding_dimension
+        self.number_of_layers = number_of_layers
+        self.number_of_attention_heads = number_of_attention_heads
+        self.dropout = dropout
+        self.bias = bias
         self.token_embedding = nn.Embedding(vocabulary_size, embedding_dimension)
         self.position_embedding = nn.Embedding(context_length, embedding_dimension)
         self.dropout_embedding = nn.Dropout(dropout)
@@ -48,11 +54,13 @@ class GPTModel(nn.Module):
         logits = self.output_head(x)
         return logits
 
+    @property
     def total_parameters(self) -> int:
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
 
+    @property
     def total_size(self, unit: str = "MB") -> float:
-        total_parameters = self.total_parameters()
+        total_parameters = self.total_parameters
         size_bytes = total_parameters * 4
         if unit == "MB":
             size = size_bytes / (1024**2)
@@ -61,6 +69,10 @@ class GPTModel(nn.Module):
         else:
             raise ValueError("Unit must be either 'MB' or 'GB'.")
         return size
+
+    @property
+    def checkpoint_name(self) -> str:
+        return f"vocab{self.vocabulary_size}_emb{self.embedding_dimension}_ctx{self.context_length}_layers{self.number_of_layers}_heads{self.number_of_attention_heads}.pt"
 
     def generate_tokens(
         self,

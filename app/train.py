@@ -184,8 +184,8 @@ if __name__ == "__main__":
 
     model = GPTModel(**model_config)
 
-    logging.info(f"Total parameters: {model.total_parameters()}")
-    logging.info(f"Total size: {model.total_size()} MB")
+    logging.info(f"Total parameters: {model.total_parameters}")
+    logging.info(f"Total size: {model.total_size} MB")
 
     save_model_config(
         model_config, os.path.join(args.checkpoint_dir, "model_config.json")
@@ -217,7 +217,7 @@ if __name__ == "__main__":
             model=model,
             optimizer=optimizer,
             loss=loss_fn,
-            checkpoint_path=checkpoint_path,
+            checkpoint_dir=checkpoint_path,
             reset_checkpoint=args.reset,
         )
         train_losses, val_losses = trainer.train(
