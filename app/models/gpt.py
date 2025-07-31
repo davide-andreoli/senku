@@ -188,4 +188,5 @@ class GPTModel(nn.Module):
 
     def load_checkpoint(self, checkpoint_path: str):
         checkpoint = torch.load(checkpoint_path, weights_only=True)
+        self.epochs = checkpoint["epoch"]
         self.load_state_dict(checkpoint["model_state_dict"])
