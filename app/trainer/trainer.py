@@ -23,7 +23,7 @@ class Trainer:
         device: torch.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu"
         ),
-        checkpoint_dir: str = "checkpoints/checkpoint.pt",
+        checkpoint_dir: str = "checkpoints",
         epoch: int = 0,
         reset_checkpoint: bool = False,
     ):
@@ -37,7 +37,10 @@ class Trainer:
         self.checkpoint_path = os.path.join(checkpoint_dir, model.checkpoint_name)
         self.epoch = epoch
 
+        print(f"Checkpoint path: {model.checkpoint_name}")
+        print(f"Checking for checkpoint in {self.checkpoint_path}")
         if not reset_checkpoint and os.path.exists(self.checkpoint_path):
+            print("-- Loading checkpoint --")
             self.load_checkpoint()
 
         if reset_checkpoint and os.path.exists(self.checkpoint_path):

@@ -1,34 +1,15 @@
 import gradio as gr
-from helpers.csv_loader import CSVLoader
-import pandas as pd
-import os
+from core.dataset import load_default_dataset, load_existing_data
 
 
-def summarize_data(df: pd.DataFrame):
-    num_rows = df.shape[0]
-
-    stats = f"Dataset loaded successfully!\n\n" f"- Rows (valid haikus): {num_rows}\n"
-
-    sample = df.head()
-    return stats, sample, gr.update(visible=True)
+def gradio_load_default_dataset():
+    stats, sample, visibility = load_default_dataset()
+    return stats, sample, gr.update(visible=visibility)
 
 
-def load_default_dataset():
-    csv_loader = CSVLoader()
-    csv_loader.load_default_dataset()
-    df = pd.read_csv("dataset/haiku/valid-haikus.csv")
-    return summarize_data(df)
-
-
-def load_existing_data():
-    if os.path.exists("dataset/haiku/valid-haikus.csv"):
-        df = pd.read_csv("dataset/haiku/valid-haikus.csv")
-        return summarize_data(df)
-    return (
-        "No data loaded yet. Please press 'Load default data'.",
-        None,
-        gr.update(visible=False),
-    )
+def gradio_load_existing_data():
+    stats, sample, visibility = load_existing_data()
+    return stats, sample, gr.update(visible=visibility)
 
 
 with gr.Blocks() as dataset:
@@ -55,13 +36,13 @@ with gr.Blocks() as dataset:
     sample_output = gr.Dataframe(label="Sample data", visible=False)
 
     load_button.click(
-        fn=load_default_dataset,
+        fn=gradio_load_default_dataset,
         inputs=[],
         outputs=[status_output, sample_output, sample_output],
     )
 
     dataset.load(
-        fn=load_existing_data,
+        fn=gradio_load_existing_data,
         inputs=[],
         outputs=[status_output, sample_output, sample_output],
     )

@@ -6,10 +6,8 @@ VOCABULARY = list(
 )
 SPECIAL_TOKENS = ["<UNK>", "<PAD>", "<EOS>"]
 
-# TODO: Check the way EOS is handled. The model seems to be predicting it as the first next character for every input.
 
-
-class Tokenizer:
+class CharacterTokenizer:
     def __init__(
         self, vocabulary: list = VOCABULARY, special_tokens: list = SPECIAL_TOKENS
     ):

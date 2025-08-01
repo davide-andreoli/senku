@@ -1,14 +1,16 @@
 import torch
 import os
 from torch.utils.data import Dataset, DataLoader, Subset
-from tokenizer.tokenizer import Tokenizer
+from tokenizer.tokenizer import CharacterTokenizer
 import hashlib
 import csv
 from torch.nn.utils.rnn import pad_sequence
 
 
 class TextDataset(Dataset):
-    def __init__(self, text: str, tokenizer: Tokenizer, max_length: int, stride: int):
+    def __init__(
+        self, text: str, tokenizer: CharacterTokenizer, max_length: int, stride: int
+    ):
         self.input_ids = []
         self.target_ids = []
         token_ids = tokenizer.encode(text)
@@ -78,7 +80,7 @@ class TextFolderDataset(Dataset):
     def __init__(
         self,
         folder_path: str,
-        tokenizer: Tokenizer,
+        tokenizer: CharacterTokenizer,
         max_length: int,
         stride: int,
         cache_dir: str = None,
@@ -185,7 +187,9 @@ class TextFolderDataset(Dataset):
 
 
 class CSVListDataset(Dataset):
-    def __init__(self, file_path: str, tokenizer: Tokenizer, context_length: int):
+    def __init__(
+        self, file_path: str, tokenizer: CharacterTokenizer, context_length: int
+    ):
         self.file_path = file_path
         self.tokenizer = tokenizer
 
