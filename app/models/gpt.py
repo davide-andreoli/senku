@@ -16,6 +16,7 @@ class GPTModel(nn.Module):
         number_of_attention_heads: int,
     ):
         super().__init__()
+        self.architecture = "transformer"
         self.context_length = context_length
         self.vocabulary_size = vocabulary_size
         self.embedding_dimension = embedding_dimension
