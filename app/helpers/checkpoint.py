@@ -17,8 +17,22 @@ class SenkuCheckpoint:
             raise ValueError("The checkpoint was not made with Senku.")
 
         self.architecture = self.checkpoint["architecture"]
-        self.tokenizer_class_name = self.checkpoint["tokenizer_class_name"]
+        self.type = self.checkpoint["text"]
+        self.model_state_dict = self.checkpoint["model_state_dict"]
+        self.optimizer_state_dict = self.checkpoint["optimizer_state_dict"]
+        self.epoch = self.checkpoint["epoch"]
         self._extract_metadata(architecture=self.architecture)
+
+    def __repr__(self) -> str:
+        name = f"{self.architecture.capitalize()} - "
+        if self.architecture == "transformer":
+            name += f"Tokenizer: {self.tokenizer_strategy} - "
+            name += f"Embedding dimension: {self.embedding_dimension} - "
+            name += f"Context length: {self.context_length} - "
+            name += f"Number of attention heads: {self.number_of_attention_heads} - "
+            name += f"Number of layers: {self.number_of_layers}"
+
+        return name
 
     def _extract_metadata(self, architecture: str):
         if architecture == "transformer":
@@ -31,6 +45,7 @@ class SenkuCheckpoint:
             self.bias = self.checkpoint["bias"]
             self.number_of_layers = self.checkpoint["number_of_layers"]
             self.dropout = self.checkpoint["dropout"]
+            self.tokenizer_strategy = self.checkpoint["tokenizer_strategy"]
 
     def instantiate_model(self) -> GPTModel:
         if self.architecture == "transformer":
@@ -43,16 +58,29 @@ class SenkuCheckpoint:
                 self.bias,
                 self.number_of_attention_heads,
             )
+            model.load_state_dict(self.model_state_dict)
             return model
 
     def instantiate_tokenizer(self) -> CharacterTokenizer:
-        if self.tokenizer_class_name == "CharacterTokenizer":
+        if self.tokenizer_strategy == "character":
             return CharacterTokenizer()
 
 
 class SenkuCheckpointManager:
     def __init__(self, checkpoint_dir="checkpoints") -> None:
         self.checkpoint_dir = checkpoint_dir
+
+    def checkpoint_exists(self, checkpoint_name: str) -> bool:
+        if os.path.isfile(os.path.join(self.checkpoint_dir, checkpoint_name)):
+            return True
+        else:
+            return False
+
+    def delete_checkpoint(self, checkpoint_name: str) -> None:
+        os.remove(os.path.join(self.checkpoint_dir, checkpoint_name))
+
+    def get_checkpoint(self, checkpoint_name: str) -> SenkuCheckpoint:
+        return SenkuCheckpoint(os.path.join(self.checkpoint_dir, checkpoint_name))
 
     def list_checkpoints(self) -> List[SenkuCheckpoint]:
         senku_checkpoints = []
@@ -69,27 +97,27 @@ class SenkuCheckpointManager:
     # TODO: Make abstract classes for senku models and tokenizers
     def save_checkpoint(
         self,
-        model: GPTModel,
-        tokenizer: CharacterTokenizer,
+        model_architecture: str,
+        model_type: str,
+        tokenizer_strategy: str,
         destination_path: str,
+        model_state_dict: dict,
+        optimizer_state_dict: dict,
         epoch: int = 0,
+        **kwargs,
     ) -> None:
-        if model.architecture == "transformer":
+        if model_architecture == "transformer":
             torch.save(
                 {
                     "application": "senku",
                     "architecture": "transformer",
+                    "model_type": model_type,
                     # TODO: maybe add an attribute into to Tokenizer rather then relying on the class name
-                    "tokenizer": tokenizer.__class__.__name__,
+                    "tokenizer_strategy": tokenizer_strategy,
                     "epoch": epoch,
-                    "embedding_dimension": model.embedding_dimension,
-                    "vocabulary_size": model.vocabulary_size,
-                    "context_length": model.context_length,
-                    "number_of_attention_heads": model.number_of_attention_heads,
-                    "number_of_layers": model.number_of_layers,
-                    "bias": model.bias,
-                    "dropout": model.dropout,
-                    "model_state_dict": model.state_dict(),
+                    "model_state_dict": model_state_dict,
+                    "optimizer_state_dict": optimizer_state_dict,
+                    **kwargs,
                 },
                 os.path.join(self.checkpoint_dir, destination_path),
             )

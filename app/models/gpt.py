@@ -17,6 +17,7 @@ class GPTModel(nn.Module):
     ):
         super().__init__()
         self.architecture = "transformer"
+        self.model_type = "text"
         self.context_length = context_length
         self.vocabulary_size = vocabulary_size
         self.embedding_dimension = embedding_dimension
@@ -54,6 +55,18 @@ class GPTModel(nn.Module):
         x = self.final_normalization(x)
         logits = self.output_head(x)
         return logits
+
+    @property
+    def keyword_arguments(self) -> dict:
+        return {
+            "vocabulary_size": self.vocabulary_size,
+            "embedding_dimension": self.embedding_dimension,
+            "context_length": self.context_length,
+            "number_of_layers": self.number_of_layers,
+            "dropout": self.dropout,
+            "bias": self.bias,
+            "number_of_attention_heads": self.number_of_attention_heads,
+        }
 
     @property
     def total_parameters(self) -> int:

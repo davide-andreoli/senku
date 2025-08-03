@@ -11,6 +11,7 @@ class CharacterTokenizer:
     def __init__(
         self, vocabulary: list = VOCABULARY, special_tokens: list = SPECIAL_TOKENS
     ):
+        self.strategy = "character"
         vocabulary.sort()
         special_tokens.sort()
         self.vocabulary = vocabulary + special_tokens
