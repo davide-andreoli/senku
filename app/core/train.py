@@ -4,6 +4,7 @@ from loaders.dataset import CSVListDataset
 from models.gpt import GPTModel
 import torch
 from helpers.checkpoint import SenkuCheckpoint
+from typing import Optional, Dict, Any
 
 
 def get_model_and_config(
@@ -16,7 +17,7 @@ def get_model_and_config(
 ):
     tokenizer = CharacterTokenizer()
 
-    model_config = {
+    model_config: Dict[str, Any] = {
         "vocabulary_size": tokenizer.vocabulary_size,
         "embedding_dimension": embedding_dimension,
         "context_length": context_length,
@@ -54,7 +55,7 @@ def validate_model(
     if is_invalid:
         return "\n\n".join(invalid_lines), False
 
-    model, tokenizer = get_model_and_config(
+    model, _ = get_model_and_config(
         embedding_dimension, context_length, num_layers, num_heads, dropout, bias
     )
 
@@ -86,7 +87,7 @@ def launch_training(
     batch_size: int = 32,
     learning_rate: float = 3e-4,
     weight_decay: float = 0.01,
-    checkpoint_name: str = None,
+    checkpoint_name: Optional[str] = None,
 ):
     torch.manual_seed(42)
 
@@ -121,7 +122,7 @@ def launch_training(
         checkpoint_name=checkpoint_name,
     )
 
-    train_losses, val_losses = trainer.train(
+    _, _ = trainer.train(
         number_of_epochs=num_epochs,
         evaluation_mode="after_epoch",
     )
@@ -158,11 +159,11 @@ def resume_training(
         model=model,
         optimizer=optimizer,
         loss=loss_fn,
-        checkpoint_name=checkpoint.checkpoint_path,
+        checkpoint_name=checkpoint.checkpoint_name,
         epoch=checkpoint.epoch,
     )
 
-    train_losses, val_losses = trainer.train(
+    _, _ = trainer.train(
         number_of_epochs=num_epochs,
         evaluation_mode="after_epoch",
     )

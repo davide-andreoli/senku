@@ -1,7 +1,12 @@
 import click
 from core.dataset import load_default_dataset
-from core.train import validate_model, launch_training
-from core.inference import list_available_checkpoints, load_model, run_inference
+from core.train import validate_model, launch_training, resume_training
+from core.inference import predict
+from core.common import list_available_checkpoints, get_checkpoint
+from rich.console import Console
+from rich.table import Table
+
+console = Console()
 
 
 @click.group()
@@ -12,8 +17,33 @@ def cli():
 @cli.command(name="load-default-dataset")
 def cli_load_default_dataset():
     stats, sample, _ = load_default_dataset()
-    click.echo(stats)
-    click.echo(sample.to_string(index=False))
+    console.print(stats)
+    table = Table(title="Sample")
+    table.add_column("First line")
+    table.add_column("Second line")
+    table.add_column("Third line")
+
+    for _, row in sample.iterrows():
+        table.add_row(row["first_line"], row["second_line"], row["third_line"])
+    console.print(table)
+
+
+@cli.command()
+@click.option("--checkpoint", prompt="Checkpoint", help="Use output from list-models.")
+@click.option("--epochs", default=50)
+@click.option("--batch-size", default=32)
+def train_existing_model(
+    checkpoint: str,
+    epochs: int,
+    batch_size: int,
+):
+    senku_checkpoint = get_checkpoint(checkpoint)
+    trainig_output = resume_training(
+        checkpoint=senku_checkpoint,
+        num_epochs=epochs,
+        batch_size=batch_size,
+    )
+    console.print(trainig_output)
 
 
 @cli.command()
@@ -25,17 +55,15 @@ def cli_load_default_dataset():
 @click.option("--bias", is_flag=True)
 @click.option("--epochs", default=50)
 @click.option("--batch-size", default=32)
-@click.option("--reset", is_flag=True)
-def train_model(
-    embedding_dimension,
-    context_length,
-    num_layers,
-    num_heads,
-    dropout,
-    bias,
-    epochs,
-    batch_size,
-    reset,
+def train_new_model(
+    embedding_dimension: int,
+    context_length: int,
+    num_layers: int,
+    num_heads: int,
+    dropout: float,
+    bias: bool,
+    epochs: int,
+    batch_size: int,
 ):
     validation_output, validity = validate_model(
         embedding_dimension=embedding_dimension,
@@ -46,7 +74,7 @@ def train_model(
         bias=bias,
     )
     if not validity:
-        click.echo(validation_output)
+        console.print(validation_output)
         return
     training_output = launch_training(
         embedding_dimension=embedding_dimension,
@@ -57,34 +85,36 @@ def train_model(
         bias=bias,
         num_epochs=epochs,
         batch_size=batch_size,
-        reset=reset,
     )
-    click.echo(training_output)
+    console.print(training_output)
 
 
 @cli.command()
 def list_models():
     for model in list_available_checkpoints():
-        click.echo(model)
+        console.print(model)
 
 
 @cli.command()
-@click.option("--model", prompt="Model string", help="Use output from list-models.")
+@click.option("--checkpoint", prompt="Checkpoint", help="Use output from list-models.")
 @click.option("--prompt", default="", help="Haiku prompt")
 @click.option("--top-k", default=10)
 @click.option("--top-p", default=0.9)
 @click.option("--temperature", default=0.8)
 @click.option("--max-length", default=100)
 @click.option("--stop-at-eos", is_flag=True, default=True)
-def generate(model, prompt, top_k, top_p, temperature, max_length, stop_at_eos):
-    msg, model_obj, tokenizer = load_model(model)
-    if not model_obj:
-        click.echo(msg)
-        return
-
-    haiku = run_inference(
-        model=model_obj,
-        tokenizer=tokenizer,
+def generate(
+    checkpoint: str,
+    prompt: str,
+    top_k: int,
+    top_p: float,
+    temperature: float,
+    max_length: int,
+    stop_at_eos: bool,
+):
+    senku_checkpoint = get_checkpoint(checkpoint)
+    haiku = predict(
+        checkpoint=senku_checkpoint,
         prompt=prompt,
         top_k=top_k,
         top_p=top_p,
@@ -93,8 +123,8 @@ def generate(model, prompt, top_k, top_p, temperature, max_length, stop_at_eos):
         stop_at_eos=stop_at_eos,
     )
 
-    click.echo("\nGenerated Haiku:\n")
-    click.echo(haiku)
+    console.print("\nGenerated Haiku:\n")
+    console.print(haiku)
 
 
 if __name__ == "__main__":

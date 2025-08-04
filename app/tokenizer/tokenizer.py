@@ -1,5 +1,7 @@
 import string
 import torch
+from typing import List
+from helpers.classes import SenkuTokenizer
 
 VOCABULARY = list(
     string.ascii_letters + string.punctuation + string.digits + string.whitespace
@@ -7,9 +9,11 @@ VOCABULARY = list(
 SPECIAL_TOKENS = ["<UNK>", "<PAD>", "<EOS>"]
 
 
-class CharacterTokenizer:
+class CharacterTokenizer(SenkuTokenizer):
     def __init__(
-        self, vocabulary: list = VOCABULARY, special_tokens: list = SPECIAL_TOKENS
+        self,
+        vocabulary: List[str] = VOCABULARY,
+        special_tokens: List[str] = SPECIAL_TOKENS,
     ):
         self.strategy = "character"
         vocabulary.sort()
@@ -19,7 +23,7 @@ class CharacterTokenizer:
         self.encode_dict = {char: idx for idx, char in enumerate(self.vocabulary)}
         self.decode_dict = {idx: char for idx, char in enumerate(self.vocabulary)}
 
-    def encode(self, text: str) -> list:
+    def encode(self, text: str) -> List[int]:
         """Encode a string into a list of integers."""
         encoded_text = [
             self.encode_dict.get(char, self.encode_dict["<UNK>"]) for char in text
@@ -35,7 +39,7 @@ class CharacterTokenizer:
     def eos_token_id(self):
         return self.encode_dict["<EOS>"]
 
-    def decode(self, encoded_text: list) -> str:
+    def decode(self, encoded_text: List[int]) -> str:
         """Decode a list of integers into a string."""
         decoded_text = "".join(
             [self.decode_dict.get(idx, "<UNK>") for idx in encoded_text]
@@ -47,5 +51,5 @@ class CharacterTokenizer:
         return torch.tensor(encoded_text).unsqueeze(0)
 
     def decode_from_tensor(self, tensor: torch.Tensor) -> str:
-        encoded_text = tensor.squeeze(0).tolist()
+        encoded_text: List[int] = tensor.squeeze(0).tolist()  # type: ignore[reportUnknownMemberType]
         return self.decode(encoded_text)

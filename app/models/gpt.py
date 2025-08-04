@@ -2,9 +2,11 @@ import torch
 from torch import nn
 from modules.blocks import TransformerBlock
 from modules.normalization import LayerNorm
+from helpers.classes import SenkuModel, SenkuTokenizer
+from typing import Dict, Any, Optional
 
 
-class GPTModel(nn.Module):
+class GPTModel(nn.Module, SenkuModel):
     def __init__(
         self,
         vocabulary_size: int,
@@ -57,7 +59,7 @@ class GPTModel(nn.Module):
         return logits
 
     @property
-    def keyword_arguments(self) -> dict:
+    def keyword_arguments(self) -> Dict[str, Any]:
         return {
             "vocabulary_size": self.vocabulary_size,
             "embedding_dimension": self.embedding_dimension,
@@ -93,8 +95,8 @@ class GPTModel(nn.Module):
         indexes: torch.Tensor,
         max_new_tokens: int,
         temperature: float = 1.0,
-        top_k: int = None,
-        top_p: float = None,
+        top_k: Optional[int] = None,
+        top_p: Optional[float] = None,
         do_sample: bool = True,
     ) -> torch.Tensor:
         """
@@ -153,7 +155,7 @@ class GPTModel(nn.Module):
 
     def generate_haiku(
         self,
-        tokenizer,
+        tokenizer: SenkuTokenizer,
         prompt: str = "",
         max_length: int = 100,
         temperature: float = 0.8,

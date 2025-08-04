@@ -14,6 +14,7 @@ class SenkuCheckpoint:
             raise ValueError(f"Checkpoint not found at {checkpoint_path}")
 
         self.checkpoint_path = checkpoint_path
+        self.checkpoint_name = os.path.split(checkpoint_path)[1]
         self.checkpoint = torch.load(self.checkpoint_path, weights_only=True)
 
         if self.checkpoint.get("application", None) != "senku":
@@ -68,6 +69,19 @@ class SenkuCheckpoint:
     def instantiate_tokenizer(self) -> CharacterTokenizer:
         if self.tokenizer_strategy == "character":
             return CharacterTokenizer()
+
+    @property
+    def checkpoint_details_string(self) -> str:
+        details = f"Model architecture: {self.architecture}  \n"
+        details += f"Model type: {self.type}  \n"
+        details += f"Number of epochs: {self.epoch}  \n"
+        details += f"Tokenizer strategy: {self.tokenizer_strategy}  \n"
+        details += f"Embedding dimension: {self.embedding_dimension}  \n"
+        details += f"Context length: {self.context_length}  \n"
+        details += f"Number of attention heads: {self.number_of_attention_heads}  \n"
+        details += f"Number of layers: {self.number_of_layers}  \n"
+        details += f"Dropout: {self.dropout}  \n"
+        return details
 
     # TODO: find a better way to handle this
     def instantiate_optimizer(

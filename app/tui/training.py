@@ -69,7 +69,7 @@ def train_model_from_scratch_flow():
     if checkpoint_name == "":
         checkpoint_name = None
 
-    if checkpoint_name and not checkpoint_name.endswith(".pt"):
+    if checkpoint_name is not None and not checkpoint_name.endswith(".pt"):
         checkpoint_name += ".pt"
 
     print("\nStarting training...\n")

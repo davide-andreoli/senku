@@ -7,6 +7,7 @@ from datetime import datetime
 import uuid
 from tqdm import tqdm
 from helpers.checkpoint import SenkuCheckpointManager
+from typing import Optional
 
 trainer_logger = logging.getLogger("trainer")
 
@@ -25,9 +26,8 @@ class Trainer:
         device: torch.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu"
         ),
-        checkpoint_name: str = None,
+        checkpoint_name: Optional[str] = None,
         epoch: int = 0,
-        reset_checkpoint: bool = False,
     ):
         self.train_dataloader = train_dataloader
         self.validation_dataloader = validation_dataloader
@@ -42,17 +42,6 @@ class Trainer:
             else f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:8]}.pt"
         )
         self.epoch = epoch
-
-        if not reset_checkpoint and self.checkpoint_manager.checkpoint_exists(
-            self.checkpoint_name
-        ):
-            print("-- Loading checkpoint --")
-            self.load_checkpoint()
-
-        if reset_checkpoint and self.checkpoint_manager.checkpoint_exists(
-            self.checkpoint_name
-        ):
-            self.checkpoint_manager.delete_checkpoint(self.checkpoint_name)
 
     def _process_batch(self, batch):
         """Handle different batch formats from different datasets"""
@@ -180,7 +169,7 @@ class Trainer:
         self.model.train()
         return validation_loss
 
-    def save_checkpoint(self, epoch: int = None):
+    def save_checkpoint(self, epoch: int = 0):
         self.checkpoint_manager.save_checkpoint(
             self.model.architecture,
             self.model.model_type,
@@ -191,11 +180,3 @@ class Trainer:
             epoch,
             **self.model.keyword_arguments,
         )
-
-    def load_checkpoint(self, epoch: int = None):
-        # TODO: This is probably non necessary since the checkpoint can instantiate the model directly
-        checkpoint = self.checkpoint_manager.get_checkpoint(self.checkpoint_name)
-        self.model.load_state_dict(checkpoint.model_state_dict)
-        # TODO: Handle optimizers in the checkpoint s well
-        self.optimizer.load_state_dict(checkpoint.optimizer_state_dict)
-        self.epoch = checkpoint.epoch
