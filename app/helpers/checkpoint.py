@@ -10,21 +10,25 @@ class SenkuCheckpoint:
         if not os.path.isfile(checkpoint_path):
             raise FileNotFoundError(f"Checkpoint not found at {checkpoint_path}")
 
+        if not checkpoint_path.endswith(".pt"):
+            raise ValueError(f"Checkpoint not found at {checkpoint_path}")
+
         self.checkpoint_path = checkpoint_path
         self.checkpoint = torch.load(self.checkpoint_path, weights_only=True)
 
-        if self.checkpoint["application"] != "senku":
+        if self.checkpoint.get("application", None) != "senku":
             raise ValueError("The checkpoint was not made with Senku.")
 
         self.architecture = self.checkpoint["architecture"]
-        self.type = self.checkpoint["text"]
+        self.type = self.checkpoint["model_type"]
         self.model_state_dict = self.checkpoint["model_state_dict"]
         self.optimizer_state_dict = self.checkpoint["optimizer_state_dict"]
         self.epoch = self.checkpoint["epoch"]
         self._extract_metadata(architecture=self.architecture)
 
     def __repr__(self) -> str:
-        name = f"{self.architecture.capitalize()} - "
+        name = f"{os.path.split(self.checkpoint_path)[1]} - "
+        name += f"{self.architecture.capitalize()} - "
         if self.architecture == "transformer":
             name += f"Tokenizer: {self.tokenizer_strategy} - "
             name += f"Embedding dimension: {self.embedding_dimension} - "
@@ -64,6 +68,22 @@ class SenkuCheckpoint:
     def instantiate_tokenizer(self) -> CharacterTokenizer:
         if self.tokenizer_strategy == "character":
             return CharacterTokenizer()
+
+    # TODO: find a better way to handle this
+    def instantiate_optimizer(
+        self,
+        model,
+        learning_rate: float = 3e-4,
+        weight_decay: float = 0.01,
+    ):
+        optimizer = torch.optim.AdamW(
+            model.parameters(),
+            lr=learning_rate,
+            weight_decay=weight_decay,
+            betas=(0.9, 0.95),
+        )
+        optimizer.load_state_dict(self.optimizer_state_dict)
+        return optimizer
 
 
 class SenkuCheckpointManager:

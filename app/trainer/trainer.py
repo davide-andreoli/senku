@@ -184,12 +184,12 @@ class Trainer:
         self.checkpoint_manager.save_checkpoint(
             self.model.architecture,
             self.model.model_type,
-            self.model.tokenizer_strategy,
+            "character",  # TODO: investigate the best way to pass te tokenizer strategy here
             self.checkpoint_name,
             self.model.state_dict(),
             self.optimizer.state_dict(),
             epoch,
-            self.model.keyword_arguments,
+            **self.model.keyword_arguments,
         )
 
     def load_checkpoint(self, epoch: int = None):

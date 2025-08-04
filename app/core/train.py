@@ -3,7 +3,7 @@ from tokenizer.tokenizer import CharacterTokenizer
 from loaders.dataset import CSVListDataset
 from models.gpt import GPTModel
 import torch
-import os
+from helpers.checkpoint import SenkuCheckpoint
 
 
 def get_model_and_config(
@@ -40,7 +40,6 @@ def validate_model(
 ):
     is_invalid = False
     big_model = False
-    checkpoint_exists = False
 
     invalid_lines = [
         "Model config is invalid.",
@@ -59,12 +58,6 @@ def validate_model(
         embedding_dimension, context_length, num_layers, num_heads, dropout, bias
     )
 
-    checkpoint_dir = "checkpoints"
-    os.makedirs(checkpoint_dir, exist_ok=True)
-    checkpoint_path = os.path.join(checkpoint_dir, model.checkpoint_name)
-    if os.path.exists(checkpoint_path):
-        checkpoint_exists = True
-
     if model.total_size > 1024:
         big_model = True
 
@@ -76,11 +69,6 @@ def validate_model(
 
     if big_model:
         valid_lines.append("This model might be too large to train on CPU.")
-
-    if checkpoint_exists:
-        valid_lines.append(f"Checkpoint found at: {model.checkpoint_name}.")
-    else:
-        valid_lines.append("No checkpoint found.")
 
     valid_string = "\n\n".join(valid_lines)
 
@@ -98,7 +86,7 @@ def launch_training(
     batch_size: int = 32,
     learning_rate: float = 3e-4,
     weight_decay: float = 0.01,
-    reset: bool = False,
+    checkpoint_name: str = None,
 ):
     torch.manual_seed(42)
 
@@ -122,6 +110,45 @@ def launch_training(
         weight_decay=weight_decay,
         betas=(0.9, 0.95),
     )
+    loss_fn = torch.nn.CrossEntropyLoss(ignore_index=-100)
+
+    trainer = Trainer(
+        train_dataloader=train_dataloader,
+        validation_dataloader=validation_dataloader,
+        model=model,
+        optimizer=optimizer,
+        loss=loss_fn,
+        checkpoint_name=checkpoint_name,
+    )
+
+    train_losses, val_losses = trainer.train(
+        number_of_epochs=num_epochs,
+        evaluation_mode="after_epoch",
+    )
+
+    # TODO: give visual feedback for the training
+    return "Training complete!"
+
+
+def resume_training(
+    checkpoint: SenkuCheckpoint,
+    num_epochs: int = 50,
+    batch_size: int = 32,
+    learning_rate: float = 3e-4,
+    weight_decay: float = 0.01,
+):
+    model = checkpoint.instantiate_model()
+    tokenizer = checkpoint.instantiate_tokenizer()
+    optimizer = checkpoint.instantiate_optimizer(model)
+    dataset = CSVListDataset(
+        file_path="dataset/haiku/valid-haikus.csv",
+        tokenizer=tokenizer,
+        context_length=model.context_length,
+    )
+
+    train_dataloader, validation_dataloader = dataset.get_train_validation_loader(
+        batch_size=batch_size, num_workers=0
+    )
 
     loss_fn = torch.nn.CrossEntropyLoss(ignore_index=-100)
 
@@ -131,7 +158,8 @@ def launch_training(
         model=model,
         optimizer=optimizer,
         loss=loss_fn,
-        reset_checkpoint=reset,
+        checkpoint_name=checkpoint.checkpoint_path,
+        epoch=checkpoint.epoch,
     )
 
     train_losses, val_losses = trainer.train(
