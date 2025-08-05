@@ -1,9 +1,36 @@
 import gradio as gr
-from core.inference import list_available_checkpoints, load_model, run_inference
+from core.inference import predict
+from core.common import list_available_checkpoints
+
+
+def gradio_list_available_checkpoints():
+    checkpoints = list_available_checkpoints()
+    checkpoint_dict = {str(checkpoint): checkpoint for checkpoint in checkpoints}
+    return checkpoint_dict
 
 
 def reload_dropdown():
-    return gr.update(choices=list_available_checkpoints())
+    return gr.update(choices=list(gradio_list_available_checkpoints().keys()))
+
+
+def load_model_details(checkpoint_key):
+    checkpoint = gradio_list_available_checkpoints()[checkpoint_key]
+    return checkpoint.checkpoint_details_string
+
+
+def gradio_run_inference(
+    checkpoint_key,
+    prompt: str,
+    top_k: int,
+    top_p: float,
+    temperature: float,
+    max_length: int,
+    stop_at_eos: bool,
+):
+    checkpoint = gradio_list_available_checkpoints()[checkpoint_key]
+    return predict(
+        checkpoint, prompt, top_k, top_p, temperature, max_length, stop_at_eos
+    )
 
 
 with gr.Blocks() as inference:
@@ -14,12 +41,11 @@ with gr.Blocks() as inference:
         gr.Markdown("## Model selection")
 
     select_model_dropdown = gr.Dropdown(
-        choices=list_available_checkpoints(), label="Select model", interactive=True
+        choices=list(gradio_list_available_checkpoints().keys()),
+        label="Select model",
+        interactive=True,
     )
     refresh_model_dropdown = gr.Button("Refresh model list")
-
-    model_state = gr.State()
-    tokenizer_state = gr.State()
 
     with gr.Row():
         gr.Markdown("## Loaded model details")
@@ -47,22 +73,21 @@ with gr.Blocks() as inference:
     )
 
     select_model_dropdown.change(
-        fn=load_model,
+        fn=load_model_details,
         inputs=[select_model_dropdown],
-        outputs=[model_details, model_state, tokenizer_state],
+        outputs=[model_details],
     )
 
     inference.load(
-        fn=load_model,
+        fn=load_model_details,
         inputs=[select_model_dropdown],
-        outputs=[model_details, model_state, tokenizer_state],
+        outputs=[model_details],
     )
 
     generate_button.click(
-        fn=run_inference,
+        fn=gradio_run_inference,
         inputs=[
-            model_state,
-            tokenizer_state,
+            select_model_dropdown,
             prompt,
             top_k,
             top_p,

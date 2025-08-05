@@ -18,8 +18,9 @@ Senku is a lightweight transformer-based language model trained to generate haik
 
 ### Project Structure
 
+## Details
 
-## Model Architecture
+### Model Architecture
 
 - Character-level tokenizer (with <PAD>, <EOS>, <UNK>)
 - GPT-style decoder-only transformer
@@ -29,7 +30,7 @@ Senku is a lightweight transformer-based language model trained to generate haik
 - Attention heads
 - Context length
 
-## Dataset Format
+### Dataset Format
 
 Haikus are stored in CSV format as three separate lines per row:
 
@@ -39,3 +40,11 @@ An old silent pond,A frog jumps into the pond,Splash! Silence again.
 ```
 
 Each haiku is tokenized and truncated to the context_length if necessary.
+
+## Roadmap
+
+- Focus on the GUI to add explanations of what all the different parts do
+- Add the possibility to experiment with different tokenizers
+- Add the possibility to experiment with different model architectures
+- Add instruction fine tuning
+- Add an image generation part

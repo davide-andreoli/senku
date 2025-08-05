@@ -2,9 +2,11 @@ import torch
 from torch import nn
 from modules.blocks import TransformerBlock
 from modules.normalization import LayerNorm
+from helpers.classes import SenkuModel, SenkuTokenizer
+from typing import Dict, Any, Optional
 
 
-class GPTModel(nn.Module):
+class GPTModel(nn.Module, SenkuModel):
     def __init__(
         self,
         vocabulary_size: int,
@@ -15,7 +17,9 @@ class GPTModel(nn.Module):
         bias: bool,
         number_of_attention_heads: int,
     ):
-        super().__init__()
+        super().__init__()  # type: ignore[reportUnknownMemberType]
+        self.architecture = "transformer"
+        self.model_type = "text"
         self.context_length = context_length
         self.vocabulary_size = vocabulary_size
         self.embedding_dimension = embedding_dimension
@@ -41,11 +45,11 @@ class GPTModel(nn.Module):
         self.final_normalization = LayerNorm(embedding_dimension)
         self.output_head = nn.Linear(embedding_dimension, vocabulary_size, bias=False)
 
-    def forward(self, in_idx):
-        batch_size, seq_len = in_idx.shape
-        token_embeddings = self.token_embedding(in_idx)
+    def forward(self, x: torch.Tensor):
+        _, sequence_length = x.shape
+        token_embeddings = self.token_embedding(x)
         position_embeddings = self.position_embedding(
-            torch.arange(seq_len, device=in_idx.device)
+            torch.arange(sequence_length, device=x.device)
         )
         x = token_embeddings + position_embeddings
         x = self.dropout_embedding(x)
@@ -53,6 +57,18 @@ class GPTModel(nn.Module):
         x = self.final_normalization(x)
         logits = self.output_head(x)
         return logits
+
+    @property
+    def keyword_arguments(self) -> Dict[str, Any]:
+        return {
+            "vocabulary_size": self.vocabulary_size,
+            "embedding_dimension": self.embedding_dimension,
+            "context_length": self.context_length,
+            "number_of_layers": self.number_of_layers,
+            "dropout": self.dropout,
+            "bias": self.bias,
+            "number_of_attention_heads": self.number_of_attention_heads,
+        }
 
     @property
     def total_parameters(self) -> int:
@@ -79,8 +95,8 @@ class GPTModel(nn.Module):
         indexes: torch.Tensor,
         max_new_tokens: int,
         temperature: float = 1.0,
-        top_k: int = None,
-        top_p: float = None,
+        top_k: Optional[int] = None,
+        top_p: Optional[float] = None,
         do_sample: bool = True,
     ) -> torch.Tensor:
         """
@@ -139,7 +155,7 @@ class GPTModel(nn.Module):
 
     def generate_haiku(
         self,
-        tokenizer,
+        tokenizer: SenkuTokenizer,
         prompt: str = "",
         max_length: int = 100,
         temperature: float = 0.8,
@@ -187,6 +203,6 @@ class GPTModel(nn.Module):
         return generated_text.strip()
 
     def load_checkpoint(self, checkpoint_path: str):
-        checkpoint = torch.load(checkpoint_path, weights_only=True)
+        checkpoint = torch.load(checkpoint_path, weights_only=True)  # type: ignore[reportUnknownMemberType]
         self.epochs = checkpoint["epoch"]
         self.load_state_dict(checkpoint["model_state_dict"])

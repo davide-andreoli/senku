@@ -2,9 +2,12 @@ import torch
 from torch import nn
 from torch.utils.data import DataLoader
 from torch.optim import Optimizer
-import os
 import logging
+from datetime import datetime
+import uuid
 from tqdm import tqdm
+from helpers.checkpoint import SenkuCheckpointManager
+from typing import Optional, Any, Tuple, List
 
 trainer_logger = logging.getLogger("trainer")
 
@@ -15,17 +18,16 @@ trainer_logger = logging.getLogger("trainer")
 class Trainer:
     def __init__(
         self,
-        train_dataloader: DataLoader,
-        validation_dataloader: DataLoader,
+        train_dataloader: DataLoader[Any],
+        validation_dataloader: DataLoader[Any],
         model: nn.Module,
         optimizer: Optimizer,
         loss: nn.Module,
         device: torch.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu"
         ),
-        checkpoint_dir: str = "checkpoints",
+        checkpoint_name: Optional[str] = None,
         epoch: int = 0,
-        reset_checkpoint: bool = False,
     ):
         self.train_dataloader = train_dataloader
         self.validation_dataloader = validation_dataloader
@@ -33,21 +35,15 @@ class Trainer:
         self.device = device
         self.optimizer = optimizer
         self.loss = loss
-        self.checkpoint_dir = checkpoint_dir
-        self.checkpoint_path = os.path.join(checkpoint_dir, model.checkpoint_name)
+        self.checkpoint_manager = SenkuCheckpointManager()
+        self.checkpoint_name = (
+            checkpoint_name
+            if checkpoint_name
+            else f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:8]}.pt"
+        )
         self.epoch = epoch
 
-        print(f"Checkpoint path: {model.checkpoint_name}")
-        print(f"Checking for checkpoint in {self.checkpoint_path}")
-        if not reset_checkpoint and os.path.exists(self.checkpoint_path):
-            print("-- Loading checkpoint --")
-            self.load_checkpoint()
-
-        if reset_checkpoint and os.path.exists(self.checkpoint_path):
-            os.remove(self.checkpoint_path)
-            print(f"Checkpoint {self.checkpoint_path} removed")
-
-    def _process_batch(self, batch):
+    def _process_batch(self, batch: torch.Tensor):
         """Handle different batch formats from different datasets"""
         if len(batch) == 2:
             # TextDataset or TextFolderDataset format
@@ -66,9 +62,9 @@ class Trainer:
         number_of_epochs: int,
         evaluation_frequency: int = 10,
         evaluation_mode: str = "after_epoch",
-    ):
-        train_losses = []
-        validation_losses = []
+    ) -> Tuple[List[float], List[float]]:
+        train_losses: List[float] = []
+        validation_losses: List[float] = []
         steps = 0
         epoch_progress_bar = tqdm(
             total=number_of_epochs, desc="Training Progress", unit="epoch"
@@ -77,7 +73,7 @@ class Trainer:
         for epoch in range(self.epoch, self.epoch + number_of_epochs):
             trainer_logger.info(f"Epoch {epoch + 1}/{number_of_epochs + self.epoch}")
             self.model.train()
-            epoch_train_losses = []
+            epoch_train_losses: List[float] = []
 
             batch_progress_bar = tqdm(
                 total=len(self.train_dataloader),
@@ -85,7 +81,7 @@ class Trainer:
                 unit="batch",
             )
 
-            for batch_index, batch in enumerate(self.train_dataloader):
+            for _, batch in enumerate(self.train_dataloader):
                 self.optimizer.zero_grad()
 
                 input_batch, target_batch, attention_mask = self._process_batch(batch)
@@ -109,7 +105,7 @@ class Trainer:
                 epoch_train_losses.append(loss.item())
                 steps += 1
                 batch_progress_bar.update(1)
-                batch_progress_bar.set_postfix({"loss": loss.item()})
+                batch_progress_bar.set_postfix({"loss": loss.item()})  # type: ignore[reportUnknownMemberType]
 
                 trainer_logger.debug(f"Training loss at step {steps}: {loss.item()}")
 
@@ -135,7 +131,7 @@ class Trainer:
 
             self.save_checkpoint(epoch + 1)
             epoch_progress_bar.update(1)
-            epoch_progress_bar.set_postfix(
+            epoch_progress_bar.set_postfix(  # type: ignore[reportUnknownMemberType]
                 {
                     "train_loss": epoch_train_loss,
                     "val_loss": validation_losses[-1] if validation_losses else 0.0,
@@ -173,19 +169,14 @@ class Trainer:
         self.model.train()
         return validation_loss
 
-    def save_checkpoint(self, epoch: int = None):
-        torch.save(
-            {
-                "epoch": epoch,
-                "model_state_dict": self.model.state_dict(),
-                "optimizer_state_dict": self.optimizer.state_dict(),
-            },
-            self.checkpoint_path,
+    def save_checkpoint(self, epoch: int = 0):
+        self.checkpoint_manager.save_checkpoint(
+            self.model.architecture,
+            self.model.model_type,
+            "character",  # TODO: investigate the best way to pass te tokenizer strategy here
+            self.checkpoint_name,
+            self.model.state_dict(),
+            self.optimizer.state_dict(),
+            epoch,
+            **self.model.keyword_arguments,
         )
-        trainer_logger.info(f"Checkpoint saved at epoch {epoch + 1}")
-
-    def load_checkpoint(self, epoch: int = None):
-        checkpoint = torch.load(self.checkpoint_path, weights_only=True)
-        self.model.load_state_dict(checkpoint["model_state_dict"])
-        self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-        self.epoch = checkpoint["epoch"]
