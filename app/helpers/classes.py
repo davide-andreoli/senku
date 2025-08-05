@@ -5,7 +5,7 @@ import torch
 
 class SenkuModel(ABC):
     @abstractmethod
-    def __init__(self):
+    def __init__(self) -> None:
         self.architecture: str
         self.model_type: str
 

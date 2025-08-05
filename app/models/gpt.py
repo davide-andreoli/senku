@@ -45,11 +45,11 @@ class GPTModel(nn.Module, SenkuModel):
         self.final_normalization = LayerNorm(embedding_dimension)
         self.output_head = nn.Linear(embedding_dimension, vocabulary_size, bias=False)
 
-    def forward(self, in_idx):
-        batch_size, seq_len = in_idx.shape
-        token_embeddings = self.token_embedding(in_idx)
+    def forward(self, x: torch.Tensor):
+        _, sequence_length = x.shape
+        token_embeddings = self.token_embedding(x)
         position_embeddings = self.position_embedding(
-            torch.arange(seq_len, device=in_idx.device)
+            torch.arange(sequence_length, device=x.device)
         )
         x = token_embeddings + position_embeddings
         x = self.dropout_embedding(x)

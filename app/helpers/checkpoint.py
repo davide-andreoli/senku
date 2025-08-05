@@ -2,7 +2,7 @@ import torch
 import os
 from models.gpt import GPTModel
 from tokenizer.tokenizer import CharacterTokenizer
-from typing import List
+from typing import List, Dict, Any
 
 
 class SenkuCheckpoint:
@@ -135,13 +135,13 @@ class SenkuCheckpointManager:
         model_type: str,
         tokenizer_strategy: str,
         destination_path: str,
-        model_state_dict: dict,
-        optimizer_state_dict: dict,
+        model_state_dict: Dict[str, Any],
+        optimizer_state_dict: Dict[str, Any],
         epoch: int = 0,
-        **kwargs,
+        **kwargs: Dict[str, Any],
     ) -> None:
         if model_architecture == "transformer":
-            torch.save(
+            torch.save(  # type: ignore[reportUnknownMemberType]
                 {
                     "application": "senku",
                     "architecture": "transformer",
