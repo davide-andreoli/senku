@@ -3,6 +3,7 @@ import os
 from models.gpt import GPTModel
 from tokenizer.tokenizer import CharacterTokenizer
 from typing import List, Dict, Any
+from helpers.classes import SenkuModel, SenkuTokenizer
 
 
 class SenkuCheckpoint:
@@ -15,7 +16,7 @@ class SenkuCheckpoint:
 
         self.checkpoint_path = checkpoint_path
         self.checkpoint_name = os.path.split(checkpoint_path)[1]
-        self.checkpoint = torch.load(self.checkpoint_path, weights_only=True)
+        self.checkpoint = torch.load(self.checkpoint_path, weights_only=True)  # type: ignore[reportUnknownMemberType]
 
         if self.checkpoint.get("application", None) != "senku":
             raise ValueError("The checkpoint was not made with Senku.")
@@ -52,7 +53,7 @@ class SenkuCheckpoint:
             self.dropout = self.checkpoint["dropout"]
             self.tokenizer_strategy = self.checkpoint["tokenizer_strategy"]
 
-    def instantiate_model(self) -> GPTModel:
+    def instantiate_model(self) -> SenkuModel:  # type: ignore[reportReturnType]
         if self.architecture == "transformer":
             model = GPTModel(
                 self.vocabulary_size,
@@ -66,7 +67,7 @@ class SenkuCheckpoint:
             model.load_state_dict(self.model_state_dict)
             return model
 
-    def instantiate_tokenizer(self) -> CharacterTokenizer:
+    def instantiate_tokenizer(self) -> SenkuTokenizer:  # type: ignore[reportReturnType]
         if self.tokenizer_strategy == "character":
             return CharacterTokenizer()
 
@@ -86,12 +87,12 @@ class SenkuCheckpoint:
     # TODO: find a better way to handle this
     def instantiate_optimizer(
         self,
-        model,
+        model: SenkuModel,
         learning_rate: float = 3e-4,
         weight_decay: float = 0.01,
     ):
         optimizer = torch.optim.AdamW(
-            model.parameters(),
+            model.parameters(),  # type: ignore[reportUnknownMemberType]
             lr=learning_rate,
             weight_decay=weight_decay,
             betas=(0.9, 0.95),
@@ -101,7 +102,7 @@ class SenkuCheckpoint:
 
 
 class SenkuCheckpointManager:
-    def __init__(self, checkpoint_dir="checkpoints") -> None:
+    def __init__(self, checkpoint_dir: str = "checkpoints") -> None:
         self.checkpoint_dir = checkpoint_dir
 
     def checkpoint_exists(self, checkpoint_name: str) -> bool:
@@ -117,7 +118,7 @@ class SenkuCheckpointManager:
         return SenkuCheckpoint(os.path.join(self.checkpoint_dir, checkpoint_name))
 
     def list_checkpoints(self) -> List[SenkuCheckpoint]:
-        senku_checkpoints = []
+        senku_checkpoints: List[SenkuCheckpoint] = []
         for checkpoint in os.listdir(self.checkpoint_dir):
             try:
                 senku_checkpoint = SenkuCheckpoint(

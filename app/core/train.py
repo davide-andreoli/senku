@@ -4,7 +4,7 @@ from loaders.dataset import CSVListDataset
 from models.gpt import GPTModel
 import torch
 from helpers.checkpoint import SenkuCheckpoint
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, cast
 
 
 def get_model_and_config(
@@ -89,7 +89,7 @@ def launch_training(
     weight_decay: float = 0.01,
     checkpoint_name: Optional[str] = None,
 ):
-    torch.manual_seed(42)
+    torch.manual_seed(42)  # type: ignore[reportUnknownMemberType]
 
     model, tokenizer = get_model_and_config(
         embedding_dimension, context_length, num_layers, num_heads, dropout, bias
@@ -144,7 +144,7 @@ def resume_training(
     dataset = CSVListDataset(
         file_path="dataset/haiku/valid-haikus.csv",
         tokenizer=tokenizer,
-        context_length=model.context_length,
+        context_length=cast(int, model.context_length),
     )
 
     train_dataloader, validation_dataloader = dataset.get_train_validation_loader(
