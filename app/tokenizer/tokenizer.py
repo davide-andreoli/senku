@@ -1,6 +1,6 @@
 import string
 import torch
-from typing import List
+from typing import List, Set, cast
 from helpers.classes import SenkuTokenizer
 import pyphen
 import csv
@@ -76,14 +76,14 @@ class SyllableTokenizer(SenkuTokenizer):
             next(csv_reader)
             rows = list(csv_reader)
             haikus = [row[0] + "\n" + row[1] + "\n" + row[2] for row in rows]
-            syllables = set()
+            syllables: Set[str] = set()
             syllables.update(
                 list(string.punctuation + string.digits + string.whitespace)
             )
             syllables.update(self.special_tokens)
             for haiku in haikus:
                 for word in haiku.split():
-                    parts = self.dic.inserted(word).split("-")
+                    parts = self.dic.inserted(word).split("-")  # type: ignore[reportUnknownMemberType]
                     syllables.update(parts)
             vocabulary = list(syllables)
             self.vocabulary = vocabulary
@@ -96,24 +96,24 @@ class SyllableTokenizer(SenkuTokenizer):
         }
 
     def encode(self, text: str) -> List[int]:
-        encoded_text = []
+        encoded_text: List[int] = []
 
         tokens = re.findall(r"\w+|[^\w\s]|\s", text)
 
         for token in tokens:
             if token.strip() == "":
                 token_id = self.encode_dict.get(token, self.encode_dict.get("<UNK>"))
-                encoded_text.append(token_id)
+                encoded_text.append(cast(int, token_id))
             elif token.isalpha():
-                syllables = self.dic.inserted(token).split("-")
+                syllables = self.dic.inserted(token).split("-")  # type: ignore[reportUnknownMemberType]
                 for syllable in syllables:
                     token_id = self.encode_dict.get(
                         syllable, self.encode_dict.get("<UNK>")
                     )
-                    encoded_text.append(token_id)
+                    encoded_text.append(cast(int, token_id))
             else:
                 token_id = self.encode_dict.get(token, self.encode_dict.get("<UNK>"))
-                encoded_text.append(token_id)
+                encoded_text.append(cast(int, token_id))
 
         encoded_text.append(self.encode_dict["<EOS>"])
         return encoded_text
