@@ -137,3 +137,61 @@ class SyllableTokenizer(SenkuTokenizer):
     def decode_from_tensor(self, tensor: torch.Tensor) -> str:
         encoded_text: List[int] = tensor.squeeze(0).tolist()  # type: ignore[reportUnknownMemberType]
         return self.decode(encoded_text)
+
+
+class WordTokenizer(SenkuTokenizer):
+    def __init__(
+        self,
+        dataset_path: str = "dataset/haiku/valid-haikus.csv",
+        special_tokens: List[str] = SPECIAL_TOKENS,
+    ):
+        self.strategy = "word"
+        self.dataset_path = dataset_path
+        self.special_tokens = special_tokens
+
+        with open(self.dataset_path, "r", encoding="utf-8") as csv_file:
+            csv_reader = csv.reader(csv_file)
+            next(csv_reader)
+            rows = list(csv_reader)
+            haikus = [row[0] + "\n" + row[1] + "\n" + row[2] for row in rows]
+
+            tokens: Set[str] = set(special_tokens)
+
+            for haiku in haikus:
+                parts = re.findall(r"\w+|[^\w\s]|\s", haiku)
+                tokens.update(parts)
+
+        self.vocabulary = sorted(tokens)
+        self.vocabulary_size = len(self.vocabulary)
+
+        self.encode_dict = {token: idx for idx, token in enumerate(self.vocabulary)}
+        self.decode_dict = {idx: token for token, idx in self.encode_dict.items()}
+
+    def encode(self, text: str) -> List[int]:
+        tokens = re.findall(r"\w+|[^\w\s]|\s", text)
+        encoded: List[int] = []
+
+        for token in tokens:
+            token_id = self.encode_dict.get(token, self.encode_dict["<UNK>"])
+            encoded.append(token_id)
+
+        encoded.append(self.eos_token_id)
+        return encoded
+
+    def decode(self, encoded_text: List[int]) -> str:
+        tokens = [self.decode_dict.get(idx, "<UNK>") for idx in encoded_text]
+        return "".join(tokens).replace("<EOS>", "").strip()
+
+    def encode_to_tensor(self, text: str) -> torch.Tensor:
+        return torch.tensor(self.encode(text)).unsqueeze(0)
+
+    def decode_from_tensor(self, tensor: torch.Tensor) -> str:
+        return self.decode(tensor.squeeze(0).tolist())
+
+    @property
+    def pad_token_id(self):
+        return self.encode_dict["<PAD>"]
+
+    @property
+    def eos_token_id(self):
+        return self.encode_dict["<EOS>"]

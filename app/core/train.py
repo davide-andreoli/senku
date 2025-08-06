@@ -1,5 +1,5 @@
 from trainer.trainer import Trainer
-from tokenizer.tokenizer import CharacterTokenizer
+from tokenizer.tokenizer import CharacterTokenizer, SyllableTokenizer, WordTokenizer
 from loaders.dataset import CSVListDataset
 from models.gpt import GPTModel
 import torch
@@ -14,8 +14,17 @@ def get_model_and_config(
     num_heads: int,
     dropout: float,
     bias: bool,
+    tokenizer_strategy: str = "character",
 ):
-    tokenizer = CharacterTokenizer()
+    # TODO: This should be a class method in SenkuTokenizer
+    if tokenizer_strategy == "character":
+        tokenizer = CharacterTokenizer()
+    elif tokenizer_strategy == "syllable":
+        tokenizer = SyllableTokenizer()
+    elif tokenizer_strategy == "word":
+        tokenizer = WordTokenizer()
+    else:
+        raise ValueError(f"Unknown tokenizer strategy: {tokenizer_strategy}")
 
     model_config: Dict[str, Any] = {
         "vocabulary_size": tokenizer.vocabulary_size,
@@ -38,6 +47,7 @@ def validate_model(
     num_heads: int = 8,
     dropout: float = 0.1,
     bias: bool = False,
+    tokenizer_strategy: str = "character",
 ):
     is_invalid = False
     big_model = False
@@ -56,7 +66,13 @@ def validate_model(
         return "\n\n".join(invalid_lines), False
 
     model, _ = get_model_and_config(
-        embedding_dimension, context_length, num_layers, num_heads, dropout, bias
+        embedding_dimension,
+        context_length,
+        num_layers,
+        num_heads,
+        dropout,
+        bias,
+        tokenizer_strategy,
     )
 
     if model.total_size > 1024:
@@ -88,11 +104,18 @@ def launch_training(
     learning_rate: float = 3e-4,
     weight_decay: float = 0.01,
     checkpoint_name: Optional[str] = None,
+    tokenizer_strategy: str = "character",
 ):
     torch.manual_seed(42)  # type: ignore[reportUnknownMemberType]
 
     model, tokenizer = get_model_and_config(
-        embedding_dimension, context_length, num_layers, num_heads, dropout, bias
+        embedding_dimension,
+        context_length,
+        num_layers,
+        num_heads,
+        dropout,
+        bias,
+        tokenizer_strategy,
     )
 
     dataset = CSVListDataset(
@@ -120,6 +143,7 @@ def launch_training(
         optimizer=optimizer,
         loss=loss_fn,
         checkpoint_name=checkpoint_name,
+        tokenizer_strategy=tokenizer.strategy,
     )
 
     _, _ = trainer.train(
@@ -161,6 +185,7 @@ def resume_training(
         loss=loss_fn,
         checkpoint_name=checkpoint.checkpoint_name,
         epoch=checkpoint.epoch,
+        tokenizer_strategy=tokenizer.strategy,
     )
 
     _, _ = trainer.train(
