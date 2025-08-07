@@ -22,6 +22,7 @@ def gradio_validate_model(
     num_heads: int = 8,
     dropout: float = 0.1,
     bias: bool = False,
+    tokenizer_strategy: str = "character",
 ):
     validation_output, validity = validate_model(
         embedding_dimension=embedding_dimension,
@@ -30,6 +31,7 @@ def gradio_validate_model(
         num_heads=num_heads,
         dropout=dropout,
         bias=bias,
+        tokenizer_strategy=tokenizer_strategy,
     )
     return validation_output, gr.update(visible=validity)
 
@@ -37,6 +39,31 @@ def gradio_validate_model(
 def load_model_details(checkpoint_key):
     checkpoint = gradio_list_available_checkpoints()[checkpoint_key]
     return checkpoint.checkpoint_details_string
+
+
+def gradio_launch_training(
+    embedding_dimension: int = 128,
+    context_length: int = 64,
+    num_layers: int = 8,
+    num_heads: int = 8,
+    dropout: float = 0.1,
+    bias: bool = False,
+    num_epochs: int = 50,
+    batch_size: int = 32,
+    # checkpoint_name: str = None,
+    tokenizer_strategy: str = "character",
+):
+    return launch_training(
+        embedding_dimension=embedding_dimension,
+        context_length=context_length,
+        num_layers=num_layers,
+        num_heads=num_heads,
+        dropout=dropout,
+        bias=bias,
+        num_epochs=num_epochs,
+        batch_size=batch_size,
+        tokenizer_strategy=tokenizer_strategy,
+    )
 
 
 with gr.Blocks() as train:
@@ -66,6 +93,11 @@ with gr.Blocks() as train:
         with gr.Column():
             gr.Markdown("## Model settings")
             # Model settings
+            select_tokenizer_dropdown = gr.Dropdown(
+                choices=["character", "syllable", "word"],
+                label="Select tokenizer",
+                interactive=True,
+            )
             embedding_dimension = gr.Number(value=128, label="Embedding dimension")
             context_length = gr.Number(value=128, label="Context length")
             num_layers = gr.Number(value=8, label="Number of layers")
@@ -93,6 +125,7 @@ with gr.Blocks() as train:
         num_heads,
         dropout,
         bias,
+        select_tokenizer_dropdown,
     ]
     for component in model_settings:
         component.change(
@@ -112,7 +145,7 @@ with gr.Blocks() as train:
         outputs=[selected_model_output],
     )
     start_training_button.click(
-        fn=launch_training,
+        fn=gradio_launch_training,
         inputs=[
             embedding_dimension,
             context_length,
@@ -122,6 +155,7 @@ with gr.Blocks() as train:
             bias,
             num_epochs,
             batch_size,
+            select_tokenizer_dropdown,
         ],
         outputs=[training_output],
     )

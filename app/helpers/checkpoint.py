@@ -1,7 +1,6 @@
 import torch
 import os
 from models.gpt import GPTModel
-from tokenizer.tokenizer import CharacterTokenizer
 from typing import List, Dict, Any
 from helpers.classes import SenkuModel, SenkuTokenizer
 
@@ -67,9 +66,8 @@ class SenkuCheckpoint:
             model.load_state_dict(self.model_state_dict)
             return model
 
-    def instantiate_tokenizer(self) -> SenkuTokenizer:  # type: ignore[reportReturnType]
-        if self.tokenizer_strategy == "character":
-            return CharacterTokenizer()
+    def instantiate_tokenizer(self) -> SenkuTokenizer:
+        return SenkuTokenizer.from_strategy(self.tokenizer_strategy)
 
     @property
     def checkpoint_details_string(self) -> str:

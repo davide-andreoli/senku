@@ -28,6 +28,7 @@ class Trainer:
         ),
         checkpoint_name: Optional[str] = None,
         epoch: int = 0,
+        tokenizer_strategy: str = "character",
     ):
         self.train_dataloader = train_dataloader
         self.validation_dataloader = validation_dataloader
@@ -42,6 +43,7 @@ class Trainer:
             else f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:8]}.pt"
         )
         self.epoch = epoch
+        self.tokenizer_strategy = tokenizer_strategy
 
     def _process_batch(self, batch: torch.Tensor):
         """Handle different batch formats from different datasets"""
@@ -173,7 +175,7 @@ class Trainer:
         self.checkpoint_manager.save_checkpoint(
             self.model.architecture,
             self.model.model_type,
-            "character",  # TODO: investigate the best way to pass te tokenizer strategy here
+            self.tokenizer_strategy,
             self.checkpoint_name,
             self.model.state_dict(),
             self.optimizer.state_dict(),
