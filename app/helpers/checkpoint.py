@@ -1,7 +1,6 @@
 import torch
 import os
 from models.gpt import GPTModel
-from tokenizer.tokenizer import CharacterTokenizer, SyllableTokenizer, WordTokenizer
 from typing import List, Dict, Any
 from helpers.classes import SenkuModel, SenkuTokenizer
 
@@ -68,14 +67,7 @@ class SenkuCheckpoint:
             return model
 
     def instantiate_tokenizer(self) -> SenkuTokenizer:
-        if self.tokenizer_strategy == "character":
-            return CharacterTokenizer()
-        elif self.tokenizer_strategy == "syllable":
-            return SyllableTokenizer()
-        elif self.tokenizer_strategy == "word":
-            return WordTokenizer()
-        else:
-            raise ValueError(f"Unknown tokenizer strategy: {self.tokenizer_strategy}")
+        return SenkuTokenizer.from_strategy(self.tokenizer_strategy)
 
     @property
     def checkpoint_details_string(self) -> str:

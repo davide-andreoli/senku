@@ -2,7 +2,7 @@ import string
 import torch
 from typing import List, Set, cast
 from helpers.classes import SenkuTokenizer
-import pyphen
+import pyphen  # type: ignore[reportMissingTypeStubs]
 import csv
 import re
 
@@ -186,7 +186,7 @@ class WordTokenizer(SenkuTokenizer):
         return torch.tensor(self.encode(text)).unsqueeze(0)
 
     def decode_from_tensor(self, tensor: torch.Tensor) -> str:
-        return self.decode(tensor.squeeze(0).tolist())
+        return self.decode(tensor.squeeze(0).tolist())  # type: ignore[reportUnknownMemberType]
 
     @property
     def pad_token_id(self):

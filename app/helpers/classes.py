@@ -58,3 +58,20 @@ class SenkuTokenizer(ABC):
     @abstractmethod
     def decode_from_tensor(self, tensor: torch.Tensor) -> str:
         pass
+
+    @classmethod
+    def from_strategy(cls, strategy: str, **kwargs: Any) -> "SenkuTokenizer":
+        from tokenizer.tokenizer import (
+            CharacterTokenizer,
+            SyllableTokenizer,
+            WordTokenizer,
+        )
+
+        if strategy == "character":
+            return CharacterTokenizer(**kwargs)
+        elif strategy == "syllable":
+            return SyllableTokenizer(**kwargs)
+        elif strategy == "word":
+            return WordTokenizer(**kwargs)
+        else:
+            raise ValueError(f"Unknown tokenizer strategy: {strategy}")

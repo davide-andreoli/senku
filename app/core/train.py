@@ -1,9 +1,9 @@
 from trainer.trainer import Trainer
-from tokenizer.tokenizer import CharacterTokenizer, SyllableTokenizer, WordTokenizer
 from loaders.dataset import CSVListDataset
 from models.gpt import GPTModel
 import torch
 from helpers.checkpoint import SenkuCheckpoint
+from helpers.classes import SenkuTokenizer
 from typing import Optional, Dict, Any, cast
 
 
@@ -16,15 +16,7 @@ def get_model_and_config(
     bias: bool,
     tokenizer_strategy: str = "character",
 ):
-    # TODO: This should be a class method in SenkuTokenizer
-    if tokenizer_strategy == "character":
-        tokenizer = CharacterTokenizer()
-    elif tokenizer_strategy == "syllable":
-        tokenizer = SyllableTokenizer()
-    elif tokenizer_strategy == "word":
-        tokenizer = WordTokenizer()
-    else:
-        raise ValueError(f"Unknown tokenizer strategy: {tokenizer_strategy}")
+    tokenizer = SenkuTokenizer.from_strategy(tokenizer_strategy)
 
     model_config: Dict[str, Any] = {
         "vocabulary_size": tokenizer.vocabulary_size,
