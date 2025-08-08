@@ -106,12 +106,12 @@ class TextFolderDataset(Dataset[Any]):
     def _tokenize_and_cache(self, file_path: str):
         cache_path = self._token_cache_path(file_path)
         if os.path.exists(cache_path):
-            tokens = torch.load(cache_path)  # type: ignore [reportUnknownMemberType]
+            tokens = torch.load(cache_path)  # pyright: ignore [reportUnknownMemberType]
         else:
             with open(file_path, "r", encoding="utf-8") as f:
                 text = f.read()
             tokens = torch.tensor(self.tokenizer.encode(text), dtype=torch.long)
-            torch.save(tokens, cache_path)  # type: ignore [reportUnknownMemberType]
+            torch.save(tokens, cache_path)  # pyright: ignore [reportUnknownMemberType]
         return tokens
 
     def _index_chunks(self):

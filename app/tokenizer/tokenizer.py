@@ -2,7 +2,7 @@ import string
 import torch
 from typing import List, Set, cast
 from helpers.classes import SenkuTokenizer
-import pyphen  # type: ignore[reportMissingTypeStubs]
+import pyphen  # pyright: ignore[reportMissingTypeStubs]
 import csv
 import re
 
@@ -54,7 +54,7 @@ class CharacterTokenizer(SenkuTokenizer):
         return torch.tensor(encoded_text).unsqueeze(0)
 
     def decode_from_tensor(self, tensor: torch.Tensor) -> str:
-        encoded_text: List[int] = tensor.squeeze(0).tolist()  # type: ignore[reportUnknownMemberType]
+        encoded_text: List[int] = tensor.squeeze(0).tolist()  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
         return self.decode(encoded_text)
 
 
@@ -83,7 +83,7 @@ class SyllableTokenizer(SenkuTokenizer):
             syllables.update(self.special_tokens)
             for haiku in haikus:
                 for word in haiku.split():
-                    parts = self.dic.inserted(word).split("-")  # type: ignore[reportUnknownMemberType]
+                    parts = self.dic.inserted(word).split("-")  # pyright: ignore[reportUnknownMemberType]
                     syllables.update(parts)
             vocabulary = list(syllables)
             self.vocabulary = vocabulary
@@ -105,7 +105,7 @@ class SyllableTokenizer(SenkuTokenizer):
                 token_id = self.encode_dict.get(token, self.encode_dict.get("<UNK>"))
                 encoded_text.append(cast(int, token_id))
             elif token.isalpha():
-                syllables = self.dic.inserted(token).split("-")  # type: ignore[reportUnknownMemberType]
+                syllables = self.dic.inserted(token).split("-")  # pyright: ignore[reportUnknownMemberType]
                 for syllable in syllables:
                     token_id = self.encode_dict.get(
                         syllable, self.encode_dict.get("<UNK>")
@@ -135,7 +135,7 @@ class SyllableTokenizer(SenkuTokenizer):
         return torch.tensor(encoded_text).unsqueeze(0)
 
     def decode_from_tensor(self, tensor: torch.Tensor) -> str:
-        encoded_text: List[int] = tensor.squeeze(0).tolist()  # type: ignore[reportUnknownMemberType]
+        encoded_text: List[int] = tensor.squeeze(0).tolist()  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
         return self.decode(encoded_text)
 
 
@@ -186,7 +186,7 @@ class WordTokenizer(SenkuTokenizer):
         return torch.tensor(self.encode(text)).unsqueeze(0)
 
     def decode_from_tensor(self, tensor: torch.Tensor) -> str:
-        return self.decode(tensor.squeeze(0).tolist())  # type: ignore[reportUnknownMemberType]
+        return self.decode(tensor.squeeze(0).tolist())  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
 
     @property
     def pad_token_id(self):

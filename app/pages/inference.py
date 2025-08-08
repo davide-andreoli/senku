@@ -13,13 +13,13 @@ def reload_dropdown():
     return gr.update(choices=list(gradio_list_available_checkpoints().keys()))
 
 
-def load_model_details(checkpoint_key):
+def load_model_details(checkpoint_key: str):
     checkpoint = gradio_list_available_checkpoints()[checkpoint_key]
     return checkpoint.checkpoint_details_string
 
 
 def gradio_run_inference(
-    checkpoint_key,
+    checkpoint_key: str,
     prompt: str,
     top_k: int,
     top_p: float,
@@ -55,12 +55,34 @@ with gr.Blocks() as inference:
     with gr.Row():
         gr.Markdown("## Inference settings")
 
-    top_k = gr.Number(value=10, label="Top K")
-    top_p = gr.Number(value=0.9, label="Top P")
-    temperature = gr.Number(value=0.8, label="Temperature")
-    max_length = gr.Number(value=100, label="Max length")
-    stop_at_eos = gr.Checkbox(value=True, label="Stop at EOS")
-    prompt = gr.Textbox(label="Prompt")
+    top_k = gr.Number(
+        value=10,
+        label="Top K",
+        info="Limits the number of possible next words the model considers. Lower values make the output more focused and deterministic.",
+    )
+    top_p = gr.Number(
+        value=0.9,
+        label="Top P",
+        info="Controls how many possible next words are considered based on their combined probability. Lower values make the output more focused; higher values allow more creativity.",
+    )
+    temperature = gr.Number(
+        value=0.8,
+        label="Temperature",
+        info="Controls the randomness of the output. Lower values make results more predictable; higher values add variety and creativity.",
+    )
+    max_length = gr.Number(
+        value=100,
+        label="Max length",
+        info="The maximum number of words or tokens the model will generate in the response.",
+    )
+    stop_at_eos = gr.Checkbox(
+        value=True,
+        label="Stop at EOS",
+        info="If checked, the model will stop generating text when it reaches an end-of-sentence token.",
+    )
+    prompt = gr.Textbox(
+        label="Prompt", info="The input or question you want the AI to respond to."
+    )
     generate_button = gr.Button("Generate")
 
     with gr.Row():

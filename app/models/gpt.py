@@ -17,7 +17,7 @@ class GPTModel(nn.Module, SenkuModel):
         bias: bool,
         number_of_attention_heads: int,
     ):
-        super().__init__()  # type: ignore[reportUnknownMemberType]
+        super().__init__()  # pyright: ignore[reportUnknownMemberType]
         self.architecture = "transformer"
         self.model_type = "text"
         self.context_length = context_length
@@ -203,6 +203,6 @@ class GPTModel(nn.Module, SenkuModel):
         return generated_text.strip()
 
     def load_checkpoint(self, checkpoint_path: str):
-        checkpoint = torch.load(checkpoint_path, weights_only=True)  # type: ignore[reportUnknownMemberType]
+        checkpoint = torch.load(checkpoint_path, weights_only=True)  # pyright: ignore[reportUnknownMemberType]
         self.epochs = checkpoint["epoch"]
         self.load_state_dict(checkpoint["model_state_dict"])
