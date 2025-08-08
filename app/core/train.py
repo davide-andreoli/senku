@@ -4,7 +4,7 @@ from models.gpt import GPTModel
 import torch
 from helpers.checkpoint import SenkuCheckpoint
 from helpers.classes import SenkuTokenizer
-from typing import Optional, Dict, Any, cast
+from typing import Optional, Dict, Any, cast, Generator, Tuple
 
 
 def get_model_and_config(
@@ -97,8 +97,8 @@ def launch_training(
     weight_decay: float = 0.01,
     checkpoint_name: Optional[str] = None,
     tokenizer_strategy: str = "character",
-):
-    torch.manual_seed(42)  # type: ignore[reportUnknownMemberType]
+) -> Generator[Tuple[float, float, str], None, None]:
+    torch.manual_seed(42)  # pyright: ignore[reportUnknownMemberType]
 
     model, tokenizer = get_model_and_config(
         embedding_dimension,
@@ -138,13 +138,10 @@ def launch_training(
         tokenizer_strategy=tokenizer.strategy,
     )
 
-    _, _ = trainer.train(
+    yield from trainer.train_generator(
         number_of_epochs=num_epochs,
         evaluation_mode="after_epoch",
     )
-
-    # TODO: give visual feedback for the training
-    return "Training complete!"
 
 
 def resume_training(
@@ -153,14 +150,14 @@ def resume_training(
     batch_size: int = 32,
     learning_rate: float = 3e-4,
     weight_decay: float = 0.01,
-):
+) -> Generator[Tuple[float, float, str], None, None]:
     model = checkpoint.instantiate_model()
     tokenizer = checkpoint.instantiate_tokenizer()
     optimizer = checkpoint.instantiate_optimizer(model)
     dataset = CSVListDataset(
         file_path="dataset/haiku/valid-haikus.csv",
         tokenizer=tokenizer,
-        context_length=cast(int, model.context_length),
+        context_length=cast(int, model.context_length),  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue]
     )
 
     train_dataloader, validation_dataloader = dataset.get_train_validation_loader(
@@ -172,7 +169,7 @@ def resume_training(
     trainer = Trainer(
         train_dataloader=train_dataloader,
         validation_dataloader=validation_dataloader,
-        model=model,
+        model=model,  # pyright: ignore[reportArgumentType]
         optimizer=optimizer,
         loss=loss_fn,
         checkpoint_name=checkpoint.checkpoint_name,
@@ -180,10 +177,7 @@ def resume_training(
         tokenizer_strategy=tokenizer.strategy,
     )
 
-    _, _ = trainer.train(
+    yield from trainer.train_generator(
         number_of_epochs=num_epochs,
         evaluation_mode="after_epoch",
     )
-
-    # TODO: give visual feedback for the training
-    return "Training complete!"

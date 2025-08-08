@@ -15,7 +15,7 @@ class SenkuCheckpoint:
 
         self.checkpoint_path = checkpoint_path
         self.checkpoint_name = os.path.split(checkpoint_path)[1]
-        self.checkpoint = torch.load(self.checkpoint_path, weights_only=True)  # type: ignore[reportUnknownMemberType]
+        self.checkpoint = torch.load(self.checkpoint_path, weights_only=True)  # pyright: ignore[reportUnknownMemberType]
 
         if self.checkpoint.get("application", None) != "senku":
             raise ValueError("The checkpoint was not made with Senku.")
@@ -52,7 +52,7 @@ class SenkuCheckpoint:
             self.dropout = self.checkpoint["dropout"]
             self.tokenizer_strategy = self.checkpoint["tokenizer_strategy"]
 
-    def instantiate_model(self) -> SenkuModel:  # type: ignore[reportReturnType]
+    def instantiate_model(self) -> SenkuModel:  # pyright: ignore[reportReturnType]
         if self.architecture == "transformer":
             model = GPTModel(
                 self.vocabulary_size,
@@ -90,7 +90,7 @@ class SenkuCheckpoint:
         weight_decay: float = 0.01,
     ):
         optimizer = torch.optim.AdamW(
-            model.parameters(),  # type: ignore[reportUnknownMemberType]
+            model.parameters(),  # pyright: ignore[reportUnknownMemberType, reportAttributeAccessIssue, reportUnknownArgumentType]
             lr=learning_rate,
             weight_decay=weight_decay,
             betas=(0.9, 0.95),
@@ -140,7 +140,7 @@ class SenkuCheckpointManager:
         **kwargs: Dict[str, Any],
     ) -> None:
         if model_architecture == "transformer":
-            torch.save(  # type: ignore[reportUnknownMemberType]
+            torch.save(  # pyright: ignore[reportUnknownMemberType]
                 {
                     "application": "senku",
                     "architecture": "transformer",

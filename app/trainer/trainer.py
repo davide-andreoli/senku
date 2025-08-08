@@ -7,7 +7,7 @@ from datetime import datetime
 import uuid
 from tqdm import tqdm
 from helpers.checkpoint import SenkuCheckpointManager
-from typing import Optional, Any, Tuple, List
+from typing import Optional, Any, Tuple, List, Generator
 
 trainer_logger = logging.getLogger("trainer")
 
@@ -107,7 +107,7 @@ class Trainer:
                 epoch_train_losses.append(loss.item())
                 steps += 1
                 batch_progress_bar.update(1)
-                batch_progress_bar.set_postfix({"loss": loss.item()})  # type: ignore[reportUnknownMemberType]
+                batch_progress_bar.set_postfix({"loss": loss.item()})  # pyright: ignore[reportUnknownMemberType]
 
                 trainer_logger.debug(f"Training loss at step {steps}: {loss.item()}")
 
@@ -133,7 +133,7 @@ class Trainer:
 
             self.save_checkpoint(epoch + 1)
             epoch_progress_bar.update(1)
-            epoch_progress_bar.set_postfix(  # type: ignore[reportUnknownMemberType]
+            epoch_progress_bar.set_postfix(  # pyright: ignore[reportUnknownMemberType]
                 {
                     "train_loss": epoch_train_loss,
                     "val_loss": validation_losses[-1] if validation_losses else 0.0,
@@ -142,6 +142,69 @@ class Trainer:
 
         epoch_progress_bar.close()
         return train_losses, validation_losses
+
+    def train_generator(
+        self,
+        number_of_epochs: int,
+        evaluation_frequency: int = 10,
+        evaluation_mode: str = "after_epoch",
+    ) -> Generator[Tuple[float, float, str], None, None]:
+        steps = 0
+
+        for epoch in range(self.epoch, self.epoch + number_of_epochs):
+            self.model.train()
+            epoch_train_losses: List[float] = []
+
+            total_batches = len(self.train_dataloader)
+
+            for batch_idx, batch in enumerate(self.train_dataloader):
+                self.optimizer.zero_grad()
+                input_batch, target_batch, attention_mask = self._process_batch(batch)
+                input_batch = input_batch.to(self.device)
+                target_batch = target_batch.to(self.device)
+
+                logits = self.model(input_batch)
+
+                if attention_mask is not None:
+                    attention_mask = attention_mask.to(self.device)
+                    active_loss = attention_mask.view(-1) == 1
+                    active_logits = logits.view(-1, logits.size(-1))[active_loss]
+                    active_labels = target_batch.view(-1)[active_loss]
+                    loss = self.loss(active_logits, active_labels)
+                else:
+                    loss = self.loss(logits.flatten(0, 1), target_batch.flatten())
+
+                loss.backward()
+                self.optimizer.step()
+                epoch_train_losses.append(loss.item())
+                steps += 1
+
+                progress_overall = (
+                    ((epoch - self.epoch) + (batch_idx + 1) / total_batches)
+                    / number_of_epochs
+                    * 100
+                )
+                progress_epoch = ((batch_idx + 1) / total_batches) * 100
+                status = (
+                    f"Epoch {epoch + 1}/{self.epoch + number_of_epochs}, "
+                    f"Batch {batch_idx + 1}/{total_batches}, "
+                    f"Loss = {loss.item():.4f}"
+                )
+
+                if evaluation_mode == "in_epoch" and steps % evaluation_frequency == 0:
+                    val_loss = self._evaluate()
+                    status += f", Val Loss = {val_loss:.4f}"
+
+                yield progress_overall, progress_epoch, status
+
+            train_loss = sum(epoch_train_losses) / len(epoch_train_losses)
+            val_loss = self._evaluate()
+            self.save_checkpoint(epoch + 1)
+
+            status = f"Epoch {epoch + 1} done: Train Loss = {train_loss:.4f}, Val Loss = {val_loss:.4f}"
+            yield ((epoch + 1) / number_of_epochs * 100), 100.0, status
+
+        yield 100.0, 100.0, "Training complete!"
 
     def _evaluate(self):
         """Run evaluation and return average validation loss"""
