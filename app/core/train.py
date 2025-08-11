@@ -5,6 +5,7 @@ import torch
 from helpers.checkpoint import SenkuCheckpoint
 from helpers.classes import SenkuTokenizer
 from typing import Optional, Dict, Any, cast, Generator, Tuple
+from loss.loss import HaikuStructureLoss
 
 
 def get_model_and_config(
@@ -126,7 +127,13 @@ def launch_training(
         weight_decay=weight_decay,
         betas=(0.9, 0.95),
     )
-    loss_fn = torch.nn.CrossEntropyLoss(ignore_index=-100)
+
+    loss_fn = HaikuStructureLoss(
+        torch.nn.CrossEntropyLoss(ignore_index=-100),
+        tokenizer.strategy,
+        tokenizer.newline_token_id,
+        tokenizer.syllable_counts,
+    )
 
     trainer = Trainer(
         train_dataloader=train_dataloader,
@@ -164,7 +171,12 @@ def resume_training(
         batch_size=batch_size, num_workers=0
     )
 
-    loss_fn = torch.nn.CrossEntropyLoss(ignore_index=-100)
+    loss_fn = HaikuStructureLoss(
+        torch.nn.CrossEntropyLoss(ignore_index=-100),
+        tokenizer.strategy,
+        tokenizer.newline_token_id,
+        tokenizer.syllable_counts,
+    )
 
     trainer = Trainer(
         train_dataloader=train_dataloader,

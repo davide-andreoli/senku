@@ -42,6 +42,10 @@ class CharacterTokenizer(SenkuTokenizer):
     def eos_token_id(self):
         return self.encode_dict["<EOS>"]
 
+    @property
+    def newline_token_id(self):
+        return self.encode_dict["\n"]
+
     def decode(self, encoded_text: List[int]) -> str:
         """Decode a list of integers into a string."""
         decoded_text = "".join(
@@ -56,6 +60,13 @@ class CharacterTokenizer(SenkuTokenizer):
     def decode_from_tensor(self, tensor: torch.Tensor) -> str:
         encoded_text: List[int] = tensor.squeeze(0).tolist()  # pyright: ignore[reportUnknownMemberType, reportUnknownVariableType]
         return self.decode(encoded_text)
+
+    @property
+    def syllable_counts(self):
+        counts: List[int] = []
+        for _ in self.vocabulary:
+            counts.append(0)
+        return torch.tensor(counts, dtype=torch.float)
 
 
 class SyllableTokenizer(SenkuTokenizer):
@@ -126,6 +137,23 @@ class SyllableTokenizer(SenkuTokenizer):
     def eos_token_id(self):
         return self.encode_dict["<EOS>"]
 
+    @property
+    def newline_token_id(self):
+        return self.encode_dict["\n"]
+
+    @property
+    def syllable_counts(self):
+        counts: List[int] = []
+        for token in self.vocabulary:
+            if (
+                token in list(string.punctuation + string.digits + string.whitespace)
+                or token in self.special_tokens
+            ):
+                counts.append(0)
+            else:
+                counts.append(1)
+        return torch.tensor(counts, dtype=torch.float)
+
     def decode(self, encoded_text: List[int]) -> str:
         syllables = [self.decode_dict.get(idx, "<UNK>") for idx in encoded_text]
         return "".join(syllables).replace("<EOS>", "").strip()
@@ -144,10 +172,13 @@ class WordTokenizer(SenkuTokenizer):
         self,
         dataset_path: str = "dataset/haiku/valid-haikus.csv",
         special_tokens: List[str] = SPECIAL_TOKENS,
+        language: str = "en_US",
     ):
         self.strategy = "word"
         self.dataset_path = dataset_path
         self.special_tokens = special_tokens
+        self.language = language
+        self.dic = pyphen.Pyphen(lang=language)
 
         with open(self.dataset_path, "r", encoding="utf-8") as csv_file:
             csv_reader = csv.reader(csv_file)
@@ -195,3 +226,20 @@ class WordTokenizer(SenkuTokenizer):
     @property
     def eos_token_id(self):
         return self.encode_dict["<EOS>"]
+
+    @property
+    def newline_token_id(self):
+        return self.encode_dict["\n"]
+
+    @property
+    def syllable_counts(self):
+        counts: List[int] = []
+        for token in self.vocabulary:
+            if (
+                token in list(string.punctuation + string.digits + string.whitespace)
+                or token in self.special_tokens
+            ):
+                counts.append(0)
+            else:
+                counts.append(len(self.dic.inserted(token).split("-")))  # pyright: ignore[reportUnknownMemberType]
+        return torch.tensor(counts, dtype=torch.float)

@@ -51,6 +51,16 @@ class SenkuTokenizer(ABC):
     def eos_token_id(self) -> int:
         pass
 
+    @property
+    @abstractmethod
+    def newline_token_id(self) -> int:
+        pass
+
+    @property
+    @abstractmethod
+    def syllable_counts(self) -> torch.Tensor:
+        pass
+
     @abstractmethod
     def encode_to_tensor(self, text: str) -> torch.Tensor:
         pass
