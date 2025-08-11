@@ -42,6 +42,8 @@ class Trainer:
             if checkpoint_name
             else f"{datetime.now().strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:8]}.pt"
         )
+        if not self.checkpoint_name.endswith(".pt"):
+            self.checkpoint_name += ".pt"
         self.epoch = epoch
         self.tokenizer_strategy = tokenizer_strategy
 
@@ -92,14 +94,7 @@ class Trainer:
 
                 logits = self.model(input_batch)
 
-                if attention_mask is not None:
-                    attention_mask = attention_mask.to(self.device)
-                    active_loss = attention_mask.view(-1) == 1
-                    active_logits = logits.view(-1, logits.size(-1))[active_loss]
-                    active_labels = target_batch.view(-1)[active_loss]
-                    loss = self.loss(active_logits, active_labels)
-                else:
-                    loss = self.loss(logits.flatten(0, 1), target_batch.flatten())
+                loss = self.loss(logits, target_batch, attention_mask)
 
                 loss.backward()
                 self.optimizer.step()
@@ -165,14 +160,7 @@ class Trainer:
 
                 logits = self.model(input_batch)
 
-                if attention_mask is not None:
-                    attention_mask = attention_mask.to(self.device)
-                    active_loss = attention_mask.view(-1) == 1
-                    active_logits = logits.view(-1, logits.size(-1))[active_loss]
-                    active_labels = target_batch.view(-1)[active_loss]
-                    loss = self.loss(active_logits, active_labels)
-                else:
-                    loss = self.loss(logits.flatten(0, 1), target_batch.flatten())
+                loss = self.loss(logits, target_batch, attention_mask)
 
                 loss.backward()
                 self.optimizer.step()
@@ -219,14 +207,7 @@ class Trainer:
 
                 logits = self.model(input_batch)
 
-                if attention_mask is not None:
-                    attention_mask = attention_mask.to(self.device)
-                    active_loss = attention_mask.view(-1) == 1
-                    active_logits = logits.view(-1, logits.size(-1))[active_loss]
-                    active_labels = target_batch.view(-1)[active_loss]
-                    loss = self.loss(active_logits, active_labels)
-                else:
-                    loss = self.loss(logits.flatten(0, 1), target_batch.flatten())
+                loss = self.loss(logits, target_batch, attention_mask)
 
                 validation_loss += loss.item()
 
