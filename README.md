@@ -1,7 +1,7 @@
 # senku: A Tiny Transformer for Generating Haikus
 
-> In the quiet code,
-> ideas bloom in three short lines.
+> In the quiet code,  
+> ideas bloom in three short lines.  
 > Haikus from machines.
 
 ## Project Overview
