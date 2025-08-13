@@ -16,8 +16,12 @@ dependencies = [
     "tqdm (>=4.67.1,<5.0.0)",
     "gradio (>=5.38.2,<6.0.0)",
     "rich (>=14.1.0,<15.0.0)",
-    "questionary (>=2.1.0,<3.0.0)"
+    "questionary (>=2.1.0,<3.0.0)",
+    "pyphen (>=0.17.2,<0.18.0)"
 ]
+
+[project.scripts]
+senku = "app.cli:cli"
 
 [tool.poetry]
 packages = [{include = "app"}]
@@ -26,6 +30,10 @@ packages = [{include = "app"}]
 [tool.poetry.group.dev.dependencies]
 ipykernel = "^6.30.0"
 pre-commit = "^4.2.0"
+pytest = "^8.4.1"
+pyright = "^1.1.403"
+coverage = "^7.10.2"
+ruff = "^0.12.8"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]

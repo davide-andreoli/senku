@@ -1,8 +1,8 @@
 import questionary
 from rich import print
-from tui.dataset import load_dataset_flow
-from tui.training import train_model_flow
-from tui.inference import inference_flow
+from app.tui.dataset import load_dataset_flow
+from app.tui.training import train_model_flow
+from app.tui.inference import inference_flow
 
 
 def main_menu():

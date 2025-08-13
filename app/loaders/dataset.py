@@ -1,18 +1,19 @@
 import torch
 import os
 from torch.utils.data import Dataset, DataLoader, Subset
-from tokenizer.tokenizer import CharacterTokenizer
 import hashlib
 import csv
 from torch.nn.utils.rnn import pad_sequence
+from typing import Any, List, Optional, Dict, Tuple
+from app.helpers.classes import SenkuTokenizer
 
 
-class TextDataset(Dataset):
+class TextDataset(Dataset[Any]):
     def __init__(
-        self, text: str, tokenizer: CharacterTokenizer, max_length: int, stride: int
+        self, text: str, tokenizer: SenkuTokenizer, max_length: int, stride: int
     ):
-        self.input_ids = []
-        self.target_ids = []
+        self.input_ids: List[torch.Tensor] = []
+        self.target_ids: List[torch.Tensor] = []
         token_ids = tokenizer.encode(text)
         print(f"Number of token ids: {len(token_ids)}")
         print(f"Max length: {max_length}")
@@ -76,14 +77,14 @@ class TextDataset(Dataset):
         return train_loader, validation_loader
 
 
-class TextFolderDataset(Dataset):
+class TextFolderDataset(Dataset[Any]):
     def __init__(
         self,
         folder_path: str,
-        tokenizer: CharacterTokenizer,
+        tokenizer: SenkuTokenizer,
         max_length: int,
         stride: int,
-        cache_dir: str = None,
+        cache_dir: Optional[str] = None,
     ):
         self.folder_path = folder_path
         self.tokenizer = tokenizer
@@ -93,24 +94,24 @@ class TextFolderDataset(Dataset):
 
         os.makedirs(self.cache_dir, exist_ok=True)
 
-        self.chunk_metadata = []
-        self.file_lengths = {}
+        self.chunk_metadata: List[Tuple[str, int]] = []
+        self.file_lengths: Dict[str, int] = {}
 
         self._index_chunks()
 
-    def _token_cache_path(self, file_path):
+    def _token_cache_path(self, file_path: str):
         fname_hash = hashlib.md5(file_path.encode("utf-8")).hexdigest()
         return os.path.join(self.cache_dir, f"{fname_hash}.pt")
 
-    def _tokenize_and_cache(self, file_path):
+    def _tokenize_and_cache(self, file_path: str):
         cache_path = self._token_cache_path(file_path)
         if os.path.exists(cache_path):
-            tokens = torch.load(cache_path)
+            tokens = torch.load(cache_path)  # pyright: ignore [reportUnknownMemberType]
         else:
             with open(file_path, "r", encoding="utf-8") as f:
                 text = f.read()
             tokens = torch.tensor(self.tokenizer.encode(text), dtype=torch.long)
-            torch.save(tokens, cache_path)
+            torch.save(tokens, cache_path)  # pyright: ignore [reportUnknownMemberType]
         return tokens
 
     def _index_chunks(self):
@@ -186,10 +187,8 @@ class TextFolderDataset(Dataset):
         return train_loader, validation_loader
 
 
-class CSVListDataset(Dataset):
-    def __init__(
-        self, file_path: str, tokenizer: CharacterTokenizer, context_length: int
-    ):
+class CSVListDataset(Dataset[Any]):
+    def __init__(self, file_path: str, tokenizer: SenkuTokenizer, context_length: int):
         self.file_path = file_path
         self.tokenizer = tokenizer
 
@@ -198,14 +197,16 @@ class CSVListDataset(Dataset):
             next(csv_reader)
             self.rows = list(csv_reader)
 
-        self.samples = []
+        self.samples: List[torch.Tensor] = []
         for row in self.rows:
             haiku = row[0] + "\n" + row[1] + "\n" + row[2]
             token_ids = tokenizer.encode(haiku)[:context_length]
             if len(token_ids) > 1:
                 self.samples.append(torch.tensor(token_ids))
 
-    def haiku_collate_fn(self, batch):
+    def haiku_collate_fn(
+        self, batch: List[Tuple[torch.Tensor, torch.Tensor]]
+    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         batch: list of tuples (input_ids, target_ids), each a 1D tensor
 

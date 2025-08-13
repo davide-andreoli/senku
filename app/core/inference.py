@@ -1,7 +1,8 @@
 import os
 import re
-from models.gpt import GPTModel
-from tokenizer.tokenizer import CharacterTokenizer
+from app.models.gpt import GPTModel
+from app.tokenizer.tokenizer import CharacterTokenizer
+from app.helpers.checkpoint import SenkuCheckpoint
 
 
 def list_available_checkpoints():
@@ -53,6 +54,29 @@ def load_model(model_string: str):
 """,
         model,
         tokenizer,
+    )
+
+
+def predict(
+    checkpoint: SenkuCheckpoint,
+    prompt: str,
+    top_k: int,
+    top_p: float,
+    temperature: float,
+    max_length: int,
+    stop_at_eos: bool,
+):
+    model = checkpoint.instantiate_model()
+    tokenizer = checkpoint.instantiate_tokenizer()
+    return run_inference(
+        model=model,
+        tokenizer=tokenizer,
+        prompt=prompt,
+        top_k=top_k,
+        top_p=top_p,
+        temperature=temperature,
+        max_length=max_length,
+        stop_at_eos=stop_at_eos,
     )
 
 
