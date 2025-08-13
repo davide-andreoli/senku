@@ -1,7 +1,7 @@
 from torch import nn
-from modules.attention import MultiHeadAttention
-from modules.normalization import LayerNorm
-from modules.activation import GELU
+from app.modules.attention import MultiHeadAttention
+from app.modules.normalization import LayerNorm
+from app.modules.activation import GELU
 
 
 class FeedForward(nn.Module):

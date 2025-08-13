@@ -1,8 +1,8 @@
 import os
 import re
-from models.gpt import GPTModel
-from tokenizer.tokenizer import CharacterTokenizer
-from helpers.checkpoint import SenkuCheckpoint
+from app.models.gpt import GPTModel
+from app.tokenizer.tokenizer import CharacterTokenizer
+from app.helpers.checkpoint import SenkuCheckpoint
 
 
 def list_available_checkpoints():

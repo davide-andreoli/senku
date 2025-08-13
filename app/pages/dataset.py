@@ -1,5 +1,5 @@
 import gradio as gr
-from core.dataset import load_default_dataset, load_existing_data
+from app.core.dataset import load_default_dataset, load_existing_data
 
 
 def gradio_load_default_dataset():

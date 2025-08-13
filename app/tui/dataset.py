@@ -1,6 +1,6 @@
-from core.dataset import load_default_dataset
+from app.core.dataset import load_default_dataset
 from rich import print
-from rich.table import Table
+from app.core.rich import display_table_sample
 
 
 def load_dataset_flow():
@@ -8,12 +8,4 @@ def load_dataset_flow():
     stats, sample, _ = load_default_dataset()
     print(f"{stats}")
 
-    table = Table(title="Sample")
-    table.add_column("First line")
-    table.add_column("Second line")
-    table.add_column("Third line")
-
-    for _, row in sample.iterrows():
-        table.add_row(row["first_line"], row["second_line"], row["third_line"])
-
-    print(table)
+    display_table_sample(sample)

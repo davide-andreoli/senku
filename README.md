@@ -43,8 +43,6 @@ Each haiku is tokenized and truncated to the context_length if necessary.
 
 ## Roadmap
 
-- Focus on the GUI to add explanations of what all the different parts do
-- Add the possibility to experiment with different tokenizers
 - Add the possibility to experiment with different model architectures
 - Add instruction fine tuning
 - Add an image generation part

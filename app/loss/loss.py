@@ -1,5 +1,5 @@
 import torch
-from helpers.haiku_validator import HaikuValidator
+from app.helpers.haiku_validator import HaikuValidator
 from typing import Optional
 
 

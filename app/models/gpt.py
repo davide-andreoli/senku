@@ -1,8 +1,8 @@
 import torch
 from torch import nn
-from modules.blocks import TransformerBlock
-from modules.normalization import LayerNorm
-from helpers.classes import SenkuModel, SenkuTokenizer
+from app.modules.blocks import TransformerBlock
+from app.modules.normalization import LayerNorm
+from app.helpers.classes import SenkuModel, SenkuTokenizer
 from typing import Dict, Any, Optional
 
 

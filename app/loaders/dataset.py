@@ -5,7 +5,7 @@ import hashlib
 import csv
 from torch.nn.utils.rnn import pad_sequence
 from typing import Any, List, Optional, Dict, Tuple
-from helpers.classes import SenkuTokenizer
+from app.helpers.classes import SenkuTokenizer
 
 
 class TextDataset(Dataset[Any]):

@@ -1,11 +1,11 @@
-from trainer.trainer import Trainer
-from loaders.dataset import CSVListDataset
-from models.gpt import GPTModel
+from app.trainer.trainer import Trainer
+from app.loaders.dataset import CSVListDataset
+from app.models.gpt import GPTModel
 import torch
-from helpers.checkpoint import SenkuCheckpoint
-from helpers.classes import SenkuTokenizer
+from app.helpers.checkpoint import SenkuCheckpoint
+from app.helpers.classes import SenkuTokenizer
 from typing import Optional, Dict, Any, cast, Generator, Tuple
-from loss.loss import HaikuStructureLoss
+from app.loss.loss import HaikuStructureLoss
 
 
 def get_model_and_config(

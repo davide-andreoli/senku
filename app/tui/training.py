@@ -1,6 +1,7 @@
 import questionary
-from core.common import list_available_checkpoints
-from core.train import validate_model, launch_training, resume_training
+from app.core.common import list_available_checkpoints
+from app.core.train import validate_model, launch_training, resume_training
+from app.core.rich import display_training_progress
 from rich import print
 
 
@@ -35,11 +36,14 @@ def train_existing_model():
     batch = questionary.text("Batch size", default="32").ask()
 
     result = resume_training(chosen_checkpoint, int(epochs), int(batch))
-    print(result)
+    display_training_progress(result)
 
 
 def train_model_from_scratch_flow():
     print("\nEnter model configuration:")
+    tokenizer_strategy = questionary.select(
+        "Select a tokenizer strategy:", choices=["character", "syllable", "word"]
+    ).ask()
     emb = questionary.text("Embedding dimension", default="128").ask()
     ctx = questionary.text("Context length", default="128").ask()
     layers = questionary.text("Number of layers", default="8").ask()
@@ -55,6 +59,7 @@ def train_model_from_scratch_flow():
         num_heads=int(heads),
         dropout=float(dropout),
         bias=bool(bias),
+        tokenizer_strategy=tokenizer_strategy,
     )
     print(validation)
     if not is_valid:
@@ -83,5 +88,7 @@ def train_model_from_scratch_flow():
         num_epochs=int(epochs),
         batch_size=int(batch),
         checkpoint_name=checkpoint_name,
+        tokenizer_strategy=tokenizer_strategy,
     )
-    print(result)
+
+    display_training_progress(result)
