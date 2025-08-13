@@ -33,6 +33,7 @@ def gui():
 
 @cli.command(name="load-default-dataset")
 def cli_load_default_dataset():
+    """Load the default dataset into the dataset/valid-haikus.csv file. This file will be used for training."""
     stats, sample, _ = load_default_dataset()
     console.print(stats)
     display_table_sample(sample)
@@ -47,6 +48,7 @@ def train_existing_model(
     epochs: int,
     batch_size: int,
 ):
+    """Resume the training of an existing model."""
     senku_checkpoint = get_checkpoint(checkpoint)
     trainig_output = resume_training(
         checkpoint=senku_checkpoint,
@@ -84,6 +86,7 @@ def train_new_model(
     batch_size: int,
     checkpoint_name: str,
 ):
+    """Train a new model from scratch."""
     validation_output, validity = validate_model(
         embedding_dimension=embedding_dimension,
         context_length=context_length,
@@ -113,6 +116,7 @@ def train_new_model(
 
 @cli.command()
 def list_models():
+    """List all models that have been trained."""
     for model in list_available_checkpoints():
         console.print(model)
 
@@ -134,6 +138,7 @@ def generate(
     max_length: int,
     stop_at_eos: bool,
 ):
+    """Generate text using a trained model."""
     senku_checkpoint = get_checkpoint(checkpoint)
     haiku = predict(
         checkpoint=senku_checkpoint,
