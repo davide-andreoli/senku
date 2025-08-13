@@ -1,8 +1,8 @@
 import torch
 import os
-from models.gpt import GPTModel
+from app.models.gpt import GPTModel
 from typing import List, Dict, Any
-from helpers.classes import SenkuModel, SenkuTokenizer
+from app.helpers.classes import SenkuModel, SenkuTokenizer
 
 
 class SenkuCheckpoint:

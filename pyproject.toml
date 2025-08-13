@@ -20,6 +20,9 @@ dependencies = [
     "pyphen (>=0.17.2,<0.18.0)"
 ]
 
+[project.scripts]
+senku = "app.cli:cli"
+
 [tool.poetry]
 packages = [{include = "app"}]
 

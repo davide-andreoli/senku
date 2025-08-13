@@ -6,7 +6,7 @@ import logging
 from datetime import datetime
 import uuid
 from tqdm import tqdm
-from helpers.checkpoint import SenkuCheckpointManager
+from app.helpers.checkpoint import SenkuCheckpointManager
 from typing import Optional, Any, Tuple, List, Generator
 
 trainer_logger = logging.getLogger("trainer")

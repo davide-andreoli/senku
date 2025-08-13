@@ -71,7 +71,7 @@ class SenkuTokenizer(ABC):
 
     @classmethod
     def from_strategy(cls, strategy: str, **kwargs: Any) -> "SenkuTokenizer":
-        from tokenizer.tokenizer import (
+        from app.tokenizer.tokenizer import (
             CharacterTokenizer,
             SyllableTokenizer,
             WordTokenizer,

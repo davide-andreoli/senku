@@ -1,9 +1,9 @@
 import gradio as gr
 
-from pages.landing import landing
-from pages.dataset import dataset
-from pages.train import train
-from pages.inference import inference
+from app.pages.landing import landing
+from app.pages.dataset import dataset
+from app.pages.train import train
+from app.pages.inference import inference
 
 with gr.Blocks() as senku_app:
     with gr.Tab("Home"):

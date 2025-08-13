@@ -1,4 +1,4 @@
-from helpers.checkpoint import SenkuCheckpointManager, SenkuCheckpoint
+from app.helpers.checkpoint import SenkuCheckpointManager, SenkuCheckpoint
 
 
 def get_checkpoint(checkpoint_name: str) -> SenkuCheckpoint:

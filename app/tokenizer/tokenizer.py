@@ -1,7 +1,7 @@
 import string
 import torch
 from typing import List, Set, cast
-from helpers.classes import SenkuTokenizer
+from app.helpers.classes import SenkuTokenizer
 import pyphen  # pyright: ignore[reportMissingTypeStubs]
 import csv
 import re

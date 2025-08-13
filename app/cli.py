@@ -1,10 +1,11 @@
 import click
-from core.dataset import load_default_dataset
-from core.train import validate_model, launch_training, resume_training
-from core.inference import predict
-from core.common import list_available_checkpoints, get_checkpoint
+from app.core.dataset import load_default_dataset
+from app.core.train import validate_model, launch_training, resume_training
+from app.core.inference import predict
+from app.core.common import list_available_checkpoints, get_checkpoint
+from app.core.rich import display_training_progress, display_table_sample
 from rich.console import Console
-from rich.table import Table
+
 
 console = Console()
 
@@ -14,24 +15,33 @@ def cli():
     pass
 
 
+@cli.command()
+def tui():
+    """Launch the Text User Interface"""
+    from app.tui_app import run_app
+
+    run_app()
+
+
+@cli.command()
+def gui():
+    """Launch the Graphical User Interface"""
+    from app.main import senku_app
+
+    senku_app.launch()
+
+
 @cli.command(name="load-default-dataset")
 def cli_load_default_dataset():
     stats, sample, _ = load_default_dataset()
     console.print(stats)
-    table = Table(title="Sample")
-    table.add_column("First line")
-    table.add_column("Second line")
-    table.add_column("Third line")
-
-    for _, row in sample.iterrows():
-        table.add_row(row["first_line"], row["second_line"], row["third_line"])
-    console.print(table)
+    display_table_sample(sample)
 
 
 @cli.command()
 @click.option("--checkpoint", prompt="Checkpoint", help="Use output from list-models.")
-@click.option("--epochs", default=50)
-@click.option("--batch-size", default=32)
+@click.option("--epochs", default=50, show_default=True)
+@click.option("--batch-size", default=32, show_default=True)
 def train_existing_model(
     checkpoint: str,
     epochs: int,
@@ -43,19 +53,27 @@ def train_existing_model(
         num_epochs=epochs,
         batch_size=batch_size,
     )
-    console.print(trainig_output)
+    display_training_progress(trainig_output)
 
 
 @cli.command()
-@click.option("--embedding-dimension", default=128)
-@click.option("--context-length", default=128)
-@click.option("--num-layers", default=8)
-@click.option("--num-heads", default=8)
-@click.option("--dropout", default=0.1)
-@click.option("--bias", is_flag=True)
-@click.option("--epochs", default=50)
-@click.option("--batch-size", default=32)
+@click.option(
+    "--tokenizer-strategy",
+    type=click.Choice(["character", "syllable", "word"], case_sensitive=False),
+    default="character",
+    show_default=True,
+)
+@click.option("--embedding-dimension", default=128, show_default=True)
+@click.option("--context-length", default=128, show_default=True)
+@click.option("--num-layers", default=8, show_default=True)
+@click.option("--num-heads", default=8, show_default=True)
+@click.option("--dropout", default=0.1, show_default=True)
+@click.option("--bias", is_flag=True, show_default=True)
+@click.option("--epochs", default=50, show_default=True)
+@click.option("--batch-size", default=32, show_default=True)
+@click.option("--checkpoint-name", default="")
 def train_new_model(
+    tokenizer_strategy: str,
     embedding_dimension: int,
     context_length: int,
     num_layers: int,
@@ -64,6 +82,7 @@ def train_new_model(
     bias: bool,
     epochs: int,
     batch_size: int,
+    checkpoint_name: str,
 ):
     validation_output, validity = validate_model(
         embedding_dimension=embedding_dimension,
@@ -72,6 +91,7 @@ def train_new_model(
         num_heads=num_heads,
         dropout=dropout,
         bias=bias,
+        tokenizer_strategy=tokenizer_strategy,
     )
     if not validity:
         console.print(validation_output)
@@ -85,8 +105,10 @@ def train_new_model(
         bias=bias,
         num_epochs=epochs,
         batch_size=batch_size,
+        tokenizer_strategy=tokenizer_strategy,
+        checkpoint_name=checkpoint_name,
     )
-    console.print(training_output)
+    display_training_progress(training_output)
 
 
 @cli.command()
@@ -98,11 +120,11 @@ def list_models():
 @cli.command()
 @click.option("--checkpoint", prompt="Checkpoint", help="Use output from list-models.")
 @click.option("--prompt", default="", help="Haiku prompt")
-@click.option("--top-k", default=10)
-@click.option("--top-p", default=0.9)
-@click.option("--temperature", default=0.8)
-@click.option("--max-length", default=100)
-@click.option("--stop-at-eos", is_flag=True, default=True)
+@click.option("--top-k", default=10, show_default=True)
+@click.option("--top-p", default=0.9, show_default=True)
+@click.option("--temperature", default=0.8, show_default=True)
+@click.option("--max-length", default=100, show_default=True)
+@click.option("--stop-at-eos", is_flag=True, default=True, show_default=True)
 def generate(
     checkpoint: str,
     prompt: str,

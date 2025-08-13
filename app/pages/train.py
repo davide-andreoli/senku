@@ -1,6 +1,6 @@
 import gradio as gr
-from core.train import validate_model, launch_training, resume_training
-from core.common import list_available_checkpoints
+from app.core.train import validate_model, launch_training, resume_training
+from app.core.common import list_available_checkpoints
 from typing import Optional, List
 
 stop_requested = False

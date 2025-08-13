@@ -1,6 +1,6 @@
 import gradio as gr
-from core.inference import predict
-from core.common import list_available_checkpoints
+from app.core.inference import predict
+from app.core.common import list_available_checkpoints
 
 
 def gradio_list_available_checkpoints():

@@ -1,4 +1,4 @@
-from helpers.csv_loader import CSVLoader
+from app.helpers.csv_loader import CSVLoader
 import pandas as pd
 import os
 

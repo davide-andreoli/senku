@@ -1,6 +1,6 @@
 import questionary
-from core.common import list_available_checkpoints
-from core.inference import predict
+from app.core.common import list_available_checkpoints
+from app.core.inference import predict
 from rich import print
 
 
